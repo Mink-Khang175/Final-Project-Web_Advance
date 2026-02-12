@@ -1,0 +1,71 @@
+<div class="auth-wrapper">
+      <div class="auth-container" [class.right-panel-active]="isSignUpMode">
+        
+        <!-- SIGN UP FORM (Expanded Fields) -->
+        <div class="form-container sign-up-container">
+          <form (submit)="onSubmit($event, 'signup')">
+            <h1>Create Account</h1>
+            <div class="social-container">
+              <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" class="social"><i class="fab fa-google-plus-g"></i></a>
+              <a href="#" class="social"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <span>or use your email for registration</span>
+            
+            <!-- Scrollable Input Area -->
+            <div class="scrollable-inputs">
+              <input type="text" placeholder="Full Name" required />
+              <input type="email" placeholder="Email Address" required />
+              <input type="tel" placeholder="Phone Number" />
+              <input type="text" placeholder="Address / City" />
+              <input type="password" placeholder="Password" required />
+              <input type="password" placeholder="Confirm Password" required />
+            </div>
+
+            <button type="submit">Sign Up</button>
+          </form>
+        </div>
+
+        <!-- SIGN IN FORM -->
+        <div class="form-container sign-in-container">
+          <form (submit)="onSubmit($event, 'signin')">
+            <h1>Sign in</h1>
+            <div class="social-container">
+              <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" class="social"><i class="fab fa-google-plus-g"></i></a>
+              <a href="#" class="social"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <span>or use your account</span>
+            <input type="email" placeholder="Email" required />
+            <input type="password" placeholder="Password" required />
+            <a href="#" class="forgot-link">Forgot your password?</a>
+            <button type="submit">Sign In</button>
+          </form>
+        </div>
+
+        <!-- OVERLAY CONTAINER (With GIF Background) -->
+        <div class="overlay-container">
+          <div class="overlay">
+            <video class="bg-video" autoplay muted loop playsinline>
+                <source src="assets/videos/video login (2).mp4" type="video/mp4">
+            </video>
+            <div class="overlay-tint"></div>
+            
+            <!-- Left Panel (Visible when Sign In form is active) -->
+            <div class="overlay-panel overlay-left">
+              <h1>Welcome Back!</h1>
+              <p>To keep connected with us please login with your personal info</p>
+              <button class="ghost" (click)="toggleMode()">Sign In</button>
+            </div>
+
+            <!-- Right Panel (Visible when Sign Up form is active) -->
+            <div class="overlay-panel overlay-right">
+              <h1>Hello, Friend!</h1>
+              <p>Enter your personal details and start your journey with us</p>
+              <button class="ghost" (click)="toggleMode()">Sign Up</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>

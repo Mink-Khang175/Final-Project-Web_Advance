@@ -1,0 +1,38 @@
+<app-header></app-header>
+
+<main class="news-page">
+  <div class="news-heading">
+    <h1>Harper's Bazaar — Fashion Highlights</h1>
+    <p>The latest standout trends from Harper's Bazaar, continuously updated to inspire the fashion community of Avant Atelier.</p>
+  </div>
+
+  <div class="feed-container">
+    <!-- Loading State -->
+    <div class="feed-empty" *ngIf="loading">
+      Loading News...
+    </div>
+
+    <!-- Error State -->
+    <div class="feed-empty" style="color:#b91c1c;" *ngIf="error && !loading">
+      Không thể tải dữ liệu từ Harper's Bazaar.
+    </div>
+
+    <!-- Empty State -->
+    <div class="feed-empty" *ngIf="!loading && !error && articles.length === 0">
+      Hiện chưa có bài viết mới.
+    </div>
+
+    <!-- Articles -->
+    <article class="feed-item" *ngFor="let item of articles">
+      <img [src]="getImageUrl(item)" [alt]="item.title" loading="lazy">
+      <div class="feed-overlay">
+        <h3>
+          <a [href]="item.link" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+        </h3>
+        <p>{{ stripHtml(item.description) }}</p>
+      </div>
+    </article>
+  </div>
+</main>
+
+<app-footer></app-footer>

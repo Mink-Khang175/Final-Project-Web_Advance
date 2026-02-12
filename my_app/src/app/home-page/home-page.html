@@ -1,0 +1,87 @@
+<app-header></app-header>
+
+<section class="homepage" id="home">
+  <video autoplay muted loop playsinline class="bg-video">
+    <source src="/assets/videos/Videointro.mp4" type="video/mp4">
+  </video>
+
+  <div class="overlay"></div>
+
+  <div class="content">
+    <div class="text">
+      <h1>Welcome to our dimension</h1>
+      <p>If we vibe - we vibe.</p>
+    </div>
+    <a href="#services">Shop now</a>
+  </div>
+</section>
+
+<section class="services" id="services">
+  <h2>New Arrivals</h2>
+  <p>Explore your vibe.</p>
+  <div class="cards">
+    <app-product-card 
+      *ngFor="let product of newArrivals"
+      [product]="product"
+      [detailUrl]="getProductDetailUrl(product)"
+      (buyNow)="handleBuyNow($event)"
+      (addToCart)="handleAddToCart($event)">
+    </app-product-card>
+  </div>
+</section>
+
+<section class="portfolio" id="portfolio">
+  <h2>Our Mood & Aesthetics</h2>
+  <p>Take a look at some of our memorable moments.</p>
+  <div class="slider-container">
+    <div class="slider">
+      <div class="slide"><img src="/assets/images/Backdrop.jpg" alt="Slide 1"></div>
+      <div class="slide"><img src="/assets/images/Aesthetic MacBook wallpaper.jpg" alt="Slide 2"></div>
+      <div class="slide"><img src="/assets/images/mood.jpg" alt="Slide 3"></div>
+      <div class="slide"><img src="/assets/images/mood1.jpg" alt="Slide 4"></div>
+      <div class="slide"><img src="/assets/images/mood3.jpg" alt="Slide 5"></div>
+      <div class="slide"><img src="/assets/images/mood4.jpg" alt="Slide 6"></div>
+    </div>
+    <button class="prev" (click)="moveSlide(-1)">&#10094;</button>
+    <button class="next" (click)="moveSlide(1)">&#10095;</button>
+  </div>
+</section>
+
+<section class="about" id="about">
+  <video autoplay muted loop playsinline preload="auto" poster="/assets/images/Backdrop.jpg" class="about-video">
+    <source src="/assets/videos/video about us new.mp4" type="video/mp4">
+  </video>
+  <div class="about-overlay"></div>
+  <div class="about-content" id="aboutContent" [class.show]="aboutVisible">
+    <h2 class="type-heading">About Us</h2>
+    <p class="about-typewriter">{{typedText}}</p>
+    <p class="about-signature">Avant Atelier</p>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <h2>Contact Us</h2>
+  <p>Reach out to us for any inquiries or collaborations.</p>
+  <div class="row">
+    <div class="col information">
+      <div class="contact-details">
+        <p><i class="fas fa-map-marker-alt"></i> 123 Atelier Avenue, District 1, Ho Chi Minh City</p>
+        <p><i class="fas fa-envelope"></i> info@avantatelier.com</p>
+        <p><i class="fas fa-phone"></i> (+84) 123-456-789</p>
+      </div>
+    </div>
+    <div class="contactForm">
+      <form (submit)="onContactSubmit($event)">
+        <input type="text" [(ngModel)]="contactForm.name" name="name" placeholder="Name*" required>
+        <input type="email" [(ngModel)]="contactForm.email" name="email" placeholder="Email*" required>
+        <textarea [(ngModel)]="contactForm.message" name="message" placeholder="Message*" required></textarea>
+        <button type="submit">Send Message</button>
+      </form>
+    </div>
+    <div id="thankYouPopup" class="thankyou-popup" [class.show]="showThankYou">
+      <span id="thankYouText">{{thankYouMessage}}</span>
+    </div>
+  </div>
+</section>
+
+<app-footer></app-footer>

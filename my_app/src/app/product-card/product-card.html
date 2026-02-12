@@ -1,0 +1,54 @@
+<div class="item" 
+     [class.is-sold-out]="product.soldOut" 
+     (click)="navigateToDetail()">
+  
+  <!-- Badge (Sale/Sold Out) -->
+  <span class="product-badge sale" *ngIf="hasDiscount && !product.soldOut">
+    Sale
+  </span>
+  <span class="product-badge sold-out" *ngIf="product.soldOut">
+    Sold Out
+  </span>
+
+  <!-- Product Images -->
+  <div class="thumb">
+    <img [src]="product.image" [alt]="product.name" loading="lazy">
+    <img *ngIf="product.imageHover" 
+         [src]="product.imageHover" 
+         [alt]="product.name + ' hover'" 
+         class="hover" 
+         loading="lazy">
+  </div>
+
+  <!-- Product Info -->
+  <h2>{{ product.name }}</h2>
+  
+  <div class="price">
+    <span class="price-sale" *ngIf="hasDiscount">
+      ${{ displayPrice.toFixed(2) }}
+    </span>
+    <span class="price-original" *ngIf="hasDiscount">
+      ${{ product.price.toFixed(2) }}
+    </span>
+    <span class="price-percent" *ngIf="hasDiscount && product.salePercent">
+      -{{ product.salePercent }}%
+    </span>
+    <span *ngIf="!hasDiscount">
+      ${{ product.price.toFixed(2) }}
+    </span>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="item-actions" *ngIf="!product.soldOut">
+    <button class="action-btn buy-now" 
+            (click)="onBuyNow($event)"
+            [disabled]="product.soldOut">
+      Buy Now
+    </button>
+    <button class="action-btn add-cart" 
+            (click)="onAddToCart($event)"
+            [disabled]="product.soldOut">
+      Add Cart
+    </button>
+  </div>
+</div>

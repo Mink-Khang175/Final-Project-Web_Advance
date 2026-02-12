@@ -1,0 +1,188 @@
+@import url('https://fonts.cdnfonts.com/css/ica-rubrik-black');
+@import url('https://fonts.cdnfonts.com/css/poppins');
+
+/* Reset */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:host {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    background-color: #D2D2D2; /* Màu nền dự phòng */
+
+    /* CHỈNH SỬA: Chỉ dùng 1 ảnh nền duy nhất */
+    background-image: url('/assets/images/background texture.jpg');
+    
+    /* "Zoom lên": cover sẽ tự động phóng to ảnh để lấp đầy toàn bộ màn hình */
+    background-size: cover;
+    
+    /* Căn giữa ảnh để khi zoom vào thì trọng tâm vẫn ở giữa */
+    background-position: center center;
+    
+    /* Không lặp lại ảnh */
+    background-repeat: no-repeat;
+}
+
+/* Xóa lớp phủ ::before nếu không cần đè thêm hiệu ứng gì nữa */
+:host::before {
+    display: none;
+}
+
+.banner {
+    width: 100%; height: 100vh; text-align: center; overflow: hidden; position: relative;
+}
+
+/* --- SLIDER 3D --- */
+.banner .slider {
+    position: absolute; width: 200px; height: 250px;
+    top: 10%; left: calc(50% - 100px);
+    transform-style: preserve-3d;
+    --carousel-depth: 550px;
+    transform: perspective(1000px);
+    animation: autoRun 20s linear infinite;
+    z-index: 2;
+    /* Transition cho animation-duration để tăng tốc mượt */
+    transition: animation-duration 1s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+@keyframes autoRun {
+    from { transform: perspective(1000px) rotateX(-16deg) rotateY(0deg); }
+    to { transform: perspective(1000px) rotateX(-16deg) rotateY(360deg); }
+}
+
+.banner .slider .item {
+    position: absolute; inset: 0 0 0 0;
+    transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(var(--carousel-depth)) scale(0.85);
+    opacity: 0;
+    animation: itemReveal 1s ease forwards;
+    animation-delay: calc((var(--position) - 1) * 0.12s);
+}
+.banner .slider .item img { width: 100%; height: 100%; object-fit: cover; }
+
+@keyframes itemReveal {
+    0% { opacity: 0; transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(var(--carousel-depth)) scale(0.6); }
+    70% { opacity: 1; }
+    100% { opacity: 1; transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(var(--carousel-depth)) scale(1); }
+}
+
+/* --- CONTENT --- */
+.banner .content {
+    position: absolute; bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: min(1400px, 100vw);
+    height: max-content; padding-bottom: 100px;
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    z-index: 1;
+}
+.banner .content h1 {
+    font-family: 'ICA Rubrik'; font-size: 16em; line-height: 1em; color: #25283B; position: relative;
+}
+.banner .content h1::after {
+    position: absolute; inset: 0 0 0 0; content: attr(data-content);
+    z-index: 2; -webkit-text-stroke: 2px #d2d2d2; color: transparent;
+}
+.banner .content .author { font-family: Poppins; text-align: right; max-width: 200px; }
+.banner .content h2 { font-size: 3em; }
+.banner .content .model {
+    background-image: url(/assets/images/images_intro/mainmodel.png);
+    width: 100%; height: 75vh; position: absolute; bottom: 0; left: 0;
+    background-size: auto 130%; background-repeat: no-repeat; background-position: top center; z-index: 1;
+}
+
+/* --- CLICK TO ENTER HINT --- */
+.enter-hint {
+    position: absolute; top: 32vh; left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    font-family: 'Poppins', sans-serif; font-size: 0.95rem; letter-spacing: 0.4em;
+    text-transform: uppercase; color: #25283b; opacity: 0.75;
+    cursor: pointer; animation: hintPulse 1.4s ease-in-out infinite; z-index: 10;
+}
+@keyframes hintPulse {
+    0%, 100% { opacity: 0.35; transform: translate(-50%, -50%) scale(0.94); text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); text-shadow: 0 0 25px rgba(255,255,255,0.6); }
+}
+
+/* --- PORTAL EFFECT (QUAN TRỌNG) --- */
+.portal-overlay {
+    position: fixed; inset: 0; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.3s ease; z-index: 999;
+}
+.portal-overlay::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.65) 0%, rgba(210,210,210,0.15) 45%, rgba(37,40,59,0.85) 100%);
+    opacity: 0; transition: opacity 0.35s ease;
+}
+.portal-ring {
+    width: 160px; height: 160px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.9);
+    box-shadow: 0 0 25px rgba(255,255,255,0.6), inset 0 0 20px rgba(255,255,255,0.4);
+    transform: scale(0.05); opacity: 0;
+}
+
+/* Khi có class .active (được thêm bởi Angular) thì chạy hiệu ứng */
+.portal-overlay.active { opacity: 1; pointer-events: all; }
+.portal-overlay.active::before { opacity: 1; }
+.portal-overlay.active .portal-ring { animation: portalExpand 1.4s ease-out forwards; }
+
+/* Hiệu ứng slider khi portal active - tăng tốc xoay dần */
+:host.portal-active .banner .slider,
+body.portal-active .banner .slider {
+    animation: autoRun 0.3s ease-in infinite;
+}
+
+:host.portal-active .banner .slider .item,
+body.portal-active .banner .slider .item {
+    animation: itemSuckIn 1.2s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards !important;
+}
+
+/* Ẩn mọi thứ khác khi portal active để focus vào hiệu ứng */
+:host.portal-active .banner .content,
+body.portal-active .banner .content {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+:host.portal-active .enter-hint,
+body.portal-active .enter-hint {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes portalExpand {
+    0% { opacity: 1; transform: scale(0.05); }
+    45% { opacity: 1; transform: scale(4); box-shadow: 0 0 50px rgba(255,255,255,1), inset 0 0 30px rgba(255,255,255,0.6); }
+    100% { opacity: 0; transform: scale(22); }
+}
+
+@keyframes itemSuckIn {
+    0% {
+        opacity: 1;
+        transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(var(--carousel-depth)) scale(1);
+    }
+    40% {
+        opacity: 0.9;
+        transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(calc(var(--carousel-depth) * 0.5)) scale(0.85);
+    }
+    70% {
+        opacity: 0.5;
+        transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(0px) scale(0.4);
+    }
+    100% {
+        opacity: 0;
+        transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(-600px) scale(0.05);
+    }
+}
+
+/* Responsive (Giữ nguyên của bạn) */
+@media screen and (max-width: 1023px) {
+    .banner .slider { width: 160px; height: 200px; left: calc(50% - 80px); --carousel-depth: 300px; }
+    .banner .content h1 { text-align: center; width: 100%; font-size: 7em; }
+    .banner .content .author { color: #fff; z-index: 2; width: 100%; text-align: center; }
+}
+@media screen and (max-width: 767px) {
+    .banner .slider { width: 100px; height: 150px; left: calc(50% - 50px); --carousel-depth: 180px; }
+    .banner .content h1 { font-size: 5em; }
+}
