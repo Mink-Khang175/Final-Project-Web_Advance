@@ -1,0 +1,65 @@
+<!-- Membership Card with Flip Effect -->
+<div class="card-perspective" (click)="toggleFlip()">
+  <div class="card-inner" [style.transform]="'rotateY(' + (flipCount * 180) + 'deg)'">
+    
+    <!-- FRONT FACE -->
+    <div class="card-face card-front">
+      <div class="logo-container">
+        <div class="brand-title">AVANT ATELIER</div>
+        <div class="brand-subtitle">Est. 2025</div>
+      </div>
+      <div class="click-hint">Tap to Flip</div>
+    </div>
+
+    <!-- BACK FACE -->
+    <div class="card-face card-back">
+      <div class="bg-watermark">AVANT</div>
+
+      <div class="header-section">
+        <div class="card-title">Membership Card</div>
+        <div class="card-id-small">NO. {{ cardNumber }}</div>
+      </div>
+
+      <div class="content-grid">
+        <div class="avatar-column">
+          <div class="avatar-container">
+            <img [src]="userPhoto || 'assets/images/default-avatar.png'" 
+                 [alt]="userName" 
+                 class="profile-avatar">
+          </div>
+        </div>
+        
+        <div class="info-column">
+        <div class="left-col">
+          <div class="info-group">
+            <div class="label">Name</div>
+            <div class="value">{{ userName }}</div>
+          </div>
+          <div class="info-group">
+            <div class="label">Member Since</div>
+            <div class="value">{{ memberSince }}</div>
+          </div>
+        </div>
+
+        <div class="right-col">
+          <div class="info-group">
+            <div class="label">Email</div>
+            <div class="value email-value">{{ userEmail }}</div>
+          </div>
+          <div class="info-group">
+            <div class="label">Status</div>
+            <div class="status-box">{{ memberStatus }}</div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div class="footer-section">
+        <div class="barcode-strip"></div>
+        <div class="barcode-number">{{ barcodeNumber }}</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+

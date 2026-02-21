@@ -1,376 +1,349 @@
 <app-header></app-header>
 
+<!-- Profile Hero Banner -->
+<div class="profile-hero">
+  <div class="profile-hero-overlay"></div>
+  <div class="profile-hero-content">
+    <span class="hero-greeting">Welcome back,</span>
+    <h1 class="hero-name">{{ userName }}</h1>
+    <div class="hero-tier">
+      <i class="fas fa-gem"></i>
+      <span>{{ memberStatus }} Member</span>
+    </div>
+  </div>
+</div>
+
 <div class="profile-wrapper">
   <div class="profile-container">
-    <!-- Hero Card Section -->
-    <div class="hero-card-section">
-      <div class="hero-card">
-        <!-- Card Header with Background -->
-        <div class="card-header">
-          <div class="card-bg-overlay"></div>
-          <div class="card-logo">AVANT ATELIER</div>
-        </div>
+    <div class="dashboard-layout">
 
-        <!-- Card Body -->
-        <div class="card-body">
-          <div class="card-content">
-            <!-- User Photo -->
-            <div class="user-photo">
-              <img [src]="userPhoto || 'assets/images/logo.png'" alt="User Photo">
-            </div>
-
-            <!-- User Info -->
-            <div class="user-info">
-              <h2 class="pass-title">MEMBERSHIP CARD</h2>
-              <div class="card-number">CARD NUMBER: {{ cardNumber }}</div>
-              
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="label">Name:</span>
-                  <span class="value">{{ userName }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Email:</span>
-                  <span class="value">{{ userEmail }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Member Since:</span>
-                  <span class="value">{{ memberSince }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Status:</span>
-                  <span class="value status-badge">{{ memberStatus }}</span>
-                </div>
-              </div>
-
-              <!-- Barcode -->
-              <div class="barcode">
-                <div class="barcode-lines"></div>
-                <div class="barcode-text">{{ barcodeNumber }}</div>
-              </div>
-            </div>
-
-            <!-- User Illustration -->
-            <div class="user-illustration">
-              <img [src]="userIllustration || 'assets/images/logo.png'" alt="User">
-            </div>
-          </div>
-        </div>
-
-        <!-- Card Footer -->
-        <div class="card-footer">
-          <div class="footer-text">EXCLUSIVE MEMBER BENEFITS</div>
-          <div class="footer-icons">
-            <span class="icon">©</span>
-            <span class="icon">⊗</span>
-            <span class="icon">★</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Content Section -->
-    <div class="main-content">
-      <!-- Sidebar Menu -->
+      <!-- Left: Sidebar -->
       <aside class="sidebar-menu">
         <nav class="menu-nav">
+          <a href="#" class="menu-item" [class.active]="activeMenu === 'information'" (click)="setActiveMenu('information', $event)">
+            <i class="fas fa-info-circle"></i>
+            <span>My Information</span>
+            <i class="fas fa-chevron-right arrow"></i>
+          </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'orders'" (click)="setActiveMenu('orders', $event)">
             <i class="fas fa-shopping-bag"></i>
-            <span>MY ORDERS</span>
-            <i class="fas fa-chevron-right"></i>
+            <span>My Orders</span>
+            <i class="fas fa-chevron-right arrow"></i>
           </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'returns'" (click)="setActiveMenu('returns', $event)">
             <i class="fas fa-undo"></i>
-            <span>MY RETURNS</span>
-            <i class="fas fa-chevron-right"></i>
+            <span>My Returns</span>
+            <i class="fas fa-chevron-right arrow"></i>
           </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'wishlist'" (click)="setActiveMenu('wishlist', $event)">
             <i class="fas fa-heart"></i>
-            <span>MY WISHLIST</span>
-            <i class="fas fa-chevron-right"></i>
+            <span>My Wishlist</span>
+            <i class="fas fa-chevron-right arrow"></i>
           </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'alerts'" (click)="setActiveMenu('alerts', $event)">
             <i class="fas fa-bell"></i>
-            <span>MY ALERTS</span>
-            <i class="fas fa-chevron-right"></i>
-          </a>
-          <a href="#" class="menu-item" [class.active]="activeMenu === 'information'" (click)="setActiveMenu('information', $event)">
-            <i class="fas fa-info-circle"></i>
-            <span>MY INFORMATION</span>
-            <i class="fas fa-chevron-right"></i>
+            <span>My Alerts</span>
+            <i class="fas fa-chevron-right arrow"></i>
           </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'credits'" (click)="setActiveMenu('credits', $event)">
             <i class="fas fa-credit-card"></i>
-            <span>MY CREDITS & E-CARDS</span>
-            <i class="fas fa-chevron-right"></i>
+            <span>Credits & E-Cards</span>
+            <i class="fas fa-chevron-right arrow"></i>
           </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'payment'" (click)="setActiveMenu('payment', $event)">
             <i class="fas fa-wallet"></i>
-            <span>MY PAYMENT METHODS</span>
-            <i class="fas fa-chevron-right"></i>
+            <span>Payment Methods</span>
+            <i class="fas fa-chevron-right arrow"></i>
           </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'help'" (click)="setActiveMenu('help', $event)">
             <i class="fas fa-question-circle"></i>
-            <span>IN NEED OF HELP</span>
-            <i class="fas fa-chevron-right"></i>
+            <span>In Need of Help</span>
+            <i class="fas fa-chevron-right arrow"></i>
           </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'deactivate'" (click)="setActiveMenu('deactivate', $event)">
             <i class="fas fa-user-slash"></i>
-            <span>DEACTIVATE MY ACCOUNT</span>
-            <i class="fas fa-chevron-right"></i>
-          </a>
-          <a href="#" class="menu-item logout" (click)="logout($event)">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>LOG OUT</span>
+            <span>Deactivate Account</span>
+            <i class="fas fa-chevron-right arrow"></i>
           </a>
         </nav>
+
+        <div class="sidebar-footer">
+          <a href="#" class="menu-item logout" (click)="logout($event)">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Log Out</span>
+          </a>
+        </div>
       </aside>
 
-      <!-- Content Area -->
-      <section class="content-area">
-        <div class="content-header">
-          <h2>{{ getActiveMenuTitle() }}</h2>
-        </div>
-
-        <div class="content-body" [ngSwitch]="activeMenu">
-          <!-- Orders Content -->
-          <div *ngSwitchCase="'orders'" class="orders-section">
-            <div class="empty-state">
-              <i class="fas fa-shopping-bag"></i>
-              <h3>CURRENTLY, YOU HAVE NOT PLACED ANY ORDERS</h3>
-              <button class="discover-btn">DISCOVER OUR COLLECTION</button>
-            </div>
+      <!-- Right: Content -->
+      <div class="content-wrapper">
+        <section class="content-area">
+          <div class="content-header">
+            <h2>{{ getActiveMenuTitle() }}</h2>
           </div>
 
-          <!-- Returns Content -->
-          <div *ngSwitchCase="'returns'" class="returns-section">
-            <div class="empty-state">
-              <i class="fas fa-undo"></i>
-              <h3>NO RETURNS REQUESTED</h3>
-              <p>All your return requests will appear here</p>
-            </div>
-          </div>
+          <div class="content-body" [ngSwitch]="activeMenu">
 
-          <!-- Wishlist Content -->
-          <div *ngSwitchCase="'wishlist'" class="wishlist-section">
-            <div class="empty-state">
-              <i class="fas fa-heart"></i>
-              <h3>YOUR WISHLIST IS EMPTY</h3>
-              <p>Save your favorite items here</p>
-              <button class="discover-btn">START SHOPPING</button>
-            </div>
-          </div>
-
-          <!-- Information Content -->
-          <div *ngSwitchCase="'information'" class="information-section">
-            <div class="info-header">
-              <div class="header-left">
-                <i class="fas fa-user-circle"></i>
-                <div>
-                  <h3>Personal Information</h3>
-                  <p>Manage your personal details and preferences</p>
+            <!-- Orders -->
+            <div *ngSwitchCase="'orders'" class="orders-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap">
+                  <i class="fas fa-shopping-bag"></i>
                 </div>
+                <h3>No Orders Yet</h3>
+                <p>Your order history will appear here once you make a purchase.</p>
+                <a routerLink="/products" class="discover-btn">Discover Our Collection</a>
               </div>
-              <button class="edit-btn" (click)="toggleEditMode()" [class.cancel]="isEditMode">
-                <i [class.fa-edit]="!isEditMode" [class.fa-times]="isEditMode" class="fas"></i>
-                {{ isEditMode ? 'Cancel' : 'Edit' }}
-              </button>
             </div>
 
-            <form class="info-form" (submit)="$event.preventDefault(); saveUserInfo()">
-              <!-- Basic Information -->
-              <div class="form-section">
-                <h4 class="section-title">
-                  <i class="fas fa-id-card"></i>
-                  Basic Information
-                </h4>
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Full Name</label>
-                    <input 
-                      type="text" 
-                      [(ngModel)]="userInfo.fullName" 
-                      name="fullName"
-                      [disabled]="!isEditMode"
-                      required>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>Email Address</label>
-                    <input 
-                      type="email" 
-                      [(ngModel)]="userInfo.email" 
-                      name="email"
-                      [disabled]="!isEditMode"
-                      required>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>Phone Number</label>
-                    <input 
-                      type="tel" 
-                      [(ngModel)]="userInfo.phone" 
-                      name="phone"
-                      [disabled]="!isEditMode"
-                      placeholder="+1 (555) 123-4567">
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>Date of Birth</label>
-                    <input 
-                      type="date" 
-                      [(ngModel)]="userInfo.dateOfBirth" 
-                      name="dateOfBirth"
-                      [disabled]="!isEditMode">
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>Gender</label>
-                    <select 
-                      [(ngModel)]="userInfo.gender" 
-                      name="gender"
-                      [disabled]="!isEditMode">
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                      <option value="prefer-not">Prefer not to say</option>
-                    </select>
-                  </div>
+            <!-- Returns -->
+            <div *ngSwitchCase="'returns'" class="returns-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap">
+                  <i class="fas fa-undo"></i>
                 </div>
+                <h3>No Returns Requested</h3>
+                <p>All your return requests will appear here.</p>
+              </div>
+            </div>
+
+            <!-- Wishlist -->
+            <div *ngSwitchCase="'wishlist'" class="wishlist-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap">
+                  <i class="fas fa-heart"></i>
+                </div>
+                <h3>Your Wishlist Is Empty</h3>
+                <p>Save the pieces you love and come back when you're ready.</p>
+                <a routerLink="/products" class="discover-btn">Start Shopping</a>
+              </div>
+            </div>
+
+            <!-- Alerts -->
+            <div *ngSwitchCase="'alerts'" class="alerts-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap">
+                  <i class="fas fa-bell"></i>
+                </div>
+                <h3>No New Alerts</h3>
+                <p>You'll be notified here about restocks, drops, and exclusive access.</p>
+              </div>
+            </div>
+
+            <!-- Credits -->
+            <div *ngSwitchCase="'credits'" class="credits-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap">
+                  <i class="fas fa-credit-card"></i>
+                </div>
+                <h3>No Credits or E-Cards</h3>
+                <p>Gift cards and store credits will be managed here.</p>
+              </div>
+            </div>
+
+            <!-- Payment -->
+            <div *ngSwitchCase="'payment'" class="payment-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap">
+                  <i class="fas fa-wallet"></i>
+                </div>
+                <h3>No Payment Methods</h3>
+                <p>Add a payment method for a faster checkout experience.</p>
+              </div>
+            </div>
+
+            <!-- Help -->
+            <div *ngSwitchCase="'help'" class="help-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap">
+                  <i class="fas fa-question-circle"></i>
+                </div>
+                <h3>How Can We Help?</h3>
+                <p>Reach out to us at <strong>info&#64;avantatelier.com</strong> or visit our contact page.</p>
+              </div>
+            </div>
+
+            <!-- Deactivate -->
+            <div *ngSwitchCase="'deactivate'" class="deactivate-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap danger">
+                  <i class="fas fa-user-slash"></i>
+                </div>
+                <h3>Deactivate Your Account</h3>
+                <p>This action is permanent. All your data, orders, and membership benefits will be lost.</p>
+                <button class="deactivate-btn">I Understand, Deactivate</button>
+              </div>
+            </div>
+
+            <!-- Information -->
+            <div *ngSwitchCase="'information'" class="information-section fade-in">
+              <!-- Membership Card -->
+              <div class="membership-card-container">
+                <app-membership-card 
+                  [userName]="userName"
+                  [userEmail]="userEmail"
+                  [userPhoto]="userPhoto"
+                  [userIllustration]="userIllustration"
+                  [cardNumber]="cardNumber"
+                  [barcodeNumber]="barcodeNumber"
+                  [memberSince]="memberSince"
+                  [memberStatus]="memberStatus">
+                </app-membership-card>
               </div>
 
-              <!-- Address Information -->
-              <div class="form-section">
-                <h4 class="section-title">
-                  <i class="fas fa-map-marker-alt"></i>
-                  Address Information
-                </h4>
-                <div class="form-grid">
-                  <div class="form-group full-width">
-                    <label>Street Address</label>
-                    <input 
-                      type="text" 
-                      [(ngModel)]="userInfo.address" 
-                      name="address"
-                      [disabled]="!isEditMode"
-                      placeholder="123 Fashion Street">
+              <!-- Personal Info Header -->
+              <div class="info-header">
+                <div class="header-left">
+                  <div class="info-icon-wrap">
+                    <i class="fas fa-user"></i>
                   </div>
-                  
-                  <div class="form-group">
-                    <label>City</label>
-                    <input 
-                      type="text" 
-                      [(ngModel)]="userInfo.city" 
-                      name="city"
-                      [disabled]="!isEditMode"
-                      placeholder="New York">
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>Postal Code</label>
-                    <input 
-                      type="text" 
-                      [(ngModel)]="userInfo.postalCode" 
-                      name="postalCode"
-                      [disabled]="!isEditMode"
-                      placeholder="10001">
-                  </div>
-                  
-                  <div class="form-group full-width">
-                    <label>Country</label>
-                    <input 
-                      type="text" 
-                      [(ngModel)]="userInfo.country" 
-                      name="country"
-                      [disabled]="!isEditMode"
-                      placeholder="United States">
+                  <div>
+                    <h3>Personal Information</h3>
+                    <p>Manage your personal details and preferences</p>
                   </div>
                 </div>
+                <button class="edit-btn" (click)="toggleEditMode()" [class.cancel]="isEditMode">
+                  <i [class.fa-edit]="!isEditMode" [class.fa-times]="isEditMode" class="fas"></i>
+                  {{ isEditMode ? 'Cancel' : 'Edit' }}
+                </button>
               </div>
 
-              <!-- Security Information -->
-              <div class="form-section">
-                <h4 class="section-title">
-                  <i class="fas fa-lock"></i>
-                  Security
-                </h4>
-                <div class="form-grid">
-                  <div class="form-group password-group">
-                    <label>Password</label>
-                    <div class="password-wrapper">
-                      <input 
-                        [type]="showPassword ? 'text' : 'password'" 
-                        [(ngModel)]="userInfo.password" 
-                        name="password"
-                        [disabled]="!isEditMode"
-                        required>
-                      <button 
-                        type="button" 
-                        class="toggle-password"
-                        (click)="togglePasswordVisibility()"
-                        *ngIf="isEditMode">
-                        <i [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword" class="fas"></i>
-                      </button>
+              <form class="info-form" (submit)="$event.preventDefault(); saveUserInfo()">
+                <!-- Basic Information -->
+                <div class="form-section">
+                  <h4 class="section-title">
+                    <i class="fas fa-id-card"></i>
+                    Basic Information
+                  </h4>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>Full Name</label>
+                      <input type="text" [(ngModel)]="userInfo.fullName" name="fullName" [disabled]="!isEditMode" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Email Address</label>
+                      <input type="email" [(ngModel)]="userInfo.email" name="email" [disabled]="!isEditMode" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Phone Number</label>
+                      <input type="tel" [(ngModel)]="userInfo.phone" name="phone" [disabled]="!isEditMode" placeholder="+1 (555) 123-4567">
+                    </div>
+                    <div class="form-group">
+                      <label>Date of Birth</label>
+                      <input type="date" [(ngModel)]="userInfo.dateOfBirth" name="dateOfBirth" [disabled]="!isEditMode">
+                    </div>
+                    <div class="form-group">
+                      <label>Gender</label>
+                      <select [(ngModel)]="userInfo.gender" name="gender" [disabled]="!isEditMode">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer-not">Prefer not to say</option>
+                      </select>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Preferences -->
-              <div class="form-section">
-                <h4 class="section-title">
-                  <i class="fas fa-cog"></i>
-                  Preferences
-                </h4>
-                <div class="preferences-grid">
-                  <label class="checkbox-label">
-                    <input 
-                      type="checkbox" 
-                      [(ngModel)]="userInfo.newsletter" 
-                      name="newsletter"
-                      [disabled]="!isEditMode">
-                    <span class="checkbox-custom"></span>
-                    <span class="checkbox-text">
-                      <strong>Newsletter Subscription</strong>
-                      <small>Receive updates about new collections and exclusive offers</small>
-                    </span>
-                  </label>
-                  
-                  <label class="checkbox-label">
-                    <input 
-                      type="checkbox" 
-                      [(ngModel)]="userInfo.notifications" 
-                      name="notifications"
-                      [disabled]="!isEditMode">
-                    <span class="checkbox-custom"></span>
-                    <span class="checkbox-text">
-                      <strong>Order Notifications</strong>
-                      <small>Get notified about your order status and shipping updates</small>
-                    </span>
-                  </label>
+                <!-- Address -->
+                <div class="form-section">
+                  <h4 class="section-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Address Information
+                  </h4>
+                  <div class="form-grid">
+                    <div class="form-group full-width">
+                      <label>Street Address</label>
+                      <input type="text" [(ngModel)]="userInfo.address" name="address" [disabled]="!isEditMode" placeholder="123 Fashion Street">
+                    </div>
+                    <div class="form-group">
+                      <label>City</label>
+                      <input type="text" [(ngModel)]="userInfo.city" name="city" [disabled]="!isEditMode" placeholder="New York">
+                    </div>
+                    <div class="form-group">
+                      <label>Postal Code</label>
+                      <input type="text" [(ngModel)]="userInfo.postalCode" name="postalCode" [disabled]="!isEditMode" placeholder="10001">
+                    </div>
+                    <div class="form-group full-width">
+                      <label>Country</label>
+                      <input type="text" [(ngModel)]="userInfo.country" name="country" [disabled]="!isEditMode" placeholder="United States">
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Save Button -->
-              <div class="form-actions" *ngIf="isEditMode">
-                <button type="submit" class="save-btn">
-                  <i class="fas fa-save"></i>
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
+                <!-- Security -->
+                <div class="form-section">
+                  <h4 class="section-title">
+                    <i class="fas fa-lock"></i>
+                    Security
+                  </h4>
+                  <div class="form-grid">
+                    <div class="form-group password-group">
+                      <label>Password</label>
+                      <div class="password-wrapper">
+                        <input 
+                          [type]="showPassword ? 'text' : 'password'" 
+                          [(ngModel)]="userInfo.password" 
+                          name="password"
+                          [disabled]="!isEditMode"
+                          required>
+                        <button type="button" class="toggle-password" (click)="togglePasswordVisibility()" *ngIf="isEditMode">
+                          <i [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword" class="fas"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-          <!-- Default Content -->
-          <div *ngSwitchDefault class="default-section">
-            <div class="empty-state">
-              <i class="fas fa-box-open"></i>
-              <h3>CONTENT COMING SOON</h3>
-              <p>This section is under development</p>
+                <!-- Preferences -->
+                <div class="form-section">
+                  <h4 class="section-title">
+                    <i class="fas fa-cog"></i>
+                    Preferences
+                  </h4>
+                  <div class="preferences-grid">
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="userInfo.newsletter" name="newsletter" [disabled]="!isEditMode">
+                      <span class="checkbox-custom"></span>
+                      <span class="checkbox-text">
+                        <strong>Newsletter Subscription</strong>
+                        <small>Receive updates about new collections and exclusive offers</small>
+                      </span>
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="userInfo.notifications" name="notifications" [disabled]="!isEditMode">
+                      <span class="checkbox-custom"></span>
+                      <span class="checkbox-text">
+                        <strong>Order Notifications</strong>
+                        <small>Get notified about your order status and shipping updates</small>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Save -->
+                <div class="form-actions" *ngIf="isEditMode">
+                  <button type="submit" class="save-btn">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                  </button>
+                </div>
+              </form>
             </div>
+
+            <!-- Default -->
+            <div *ngSwitchDefault class="default-section fade-in">
+              <div class="empty-state">
+                <div class="empty-icon-wrap">
+                  <i class="fas fa-box-open"></i>
+                </div>
+                <h3>Content Coming Soon</h3>
+                <p>This section is under development.</p>
+              </div>
+            </div>
+
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   </div>
 </div>

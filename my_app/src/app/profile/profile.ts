@@ -1,8 +1,10 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Header } from '../header/header';
 import { Footer } from '../footer/footer';
+import { MembershipCard } from '../membership-card/membership-card';
 
 interface UserInfo {
   fullName: string;
@@ -21,7 +23,7 @@ interface UserInfo {
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule, Header, Footer, FormsModule],
+  imports: [CommonModule, Header, Footer, MembershipCard, FormsModule, RouterModule],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -37,7 +39,7 @@ export class Profile implements OnInit {
   memberStatus = 'PREMIUM';
   
   // Active Menu State
-  activeMenu = 'orders';
+  activeMenu = 'information';
   
   // User Information
   userInfo: UserInfo = {
@@ -118,6 +120,18 @@ export class Profile implements OnInit {
       event.preventDefault();
     }
     this.activeMenu = menu;
+
+    // Scroll to top of content area to prevent jumping to footer
+    if (isPlatformBrowser(this.platformId)) {
+      setTimeout(() => {
+        const contentHeader = document.querySelector('.content-header');
+        if (contentHeader) {
+          const headerOffset = 80; // fixed header height
+          const elementTop = contentHeader.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({ top: elementTop - headerOffset, behavior: 'smooth' });
+        }
+      }, 0);
+    }
   }
 
   getActiveMenuTitle(): string {
