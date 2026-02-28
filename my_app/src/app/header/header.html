@@ -1,71 +1,105 @@
-<header class="landing-header" [class.is-solid]="isScrolled || !isHomePage">
-  <nav class="navbar">
-    <input type="checkbox" id="menu-toggler">
-    <label for="menu-toggler" id="hamburger-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24px" height="24px">
-        <path d="M0 0h24v24H0z" fill="none"/>
-        <path d="M3 18h18v-2H3v2zm0-5h18V11H3v2zm0-7v2h18V6H3z"/>
-      </svg>
-    </label>
+﻿<header class="glass-header" [class.on-light]="isOnLightSection">
+  <!-- Blending navbar wrapper -->
+  <div class="navbar-blend">
+    <nav class="navbar">
+      <h2 class="logo"><a routerLink="/home">AVANT ATELIER</a></h2>
 
-    <h2 class="logo"><a routerLink="/home">AVANT ATELIER</a></h2>
+      <!-- Desktop center navigation -->
+      <ul class="nav-center">
+        <li>
+          <a [class.active]="isHomePage && activeSection === 'home'"
+             (click)="navigateSection($event, 'home')">Home</a>
+        </li>
+        <li class="has-dropdown">
+          <a [class.active]="isHomePage && activeSection === 'services'"
+             (click)="navigateSection($event, 'services')">Products</a>
+          <ul class="dropdown">
+            <li><a href="/top">Top</a></li>
+            <li><a href="/bottom">Bottom</a></li>
+            <li><a href="/accessories">Accessories</a></li>
+          </ul>
+        </li>
+        <li>
+          <a [class.active]="isHomePage && activeSection === 'portfolio'"
+             (click)="navigateSection($event, 'portfolio')">Inspiration</a>
+        </li>
+        <li>
+          <a [class.active]="isHomePage && activeSection === 'about'"
+             (click)="navigateSection($event, 'about')">About Us</a>
+        </li>
+      </ul>
 
-    <ul class="all-links" id="sideMenu">
-      <li class="close-btn">
-        <label for="menu-toggler" class="close-icon"><i class="fas fa-times"></i></label>
-      </li>
+      <!-- Right icons -->
+      <div class="right-icons">
+        <a [href]="isLoggedIn ? '/profile' : '/auth'" id="userIconLink"
+          [title]="isLoggedIn ? 'View profile' : 'Sign in'">
+          <i class="fas fa-user"></i>
+        </a>
+
+        <div class="search-container" [class.active]="searchActive">
+          <input
+            type="text"
+            class="search-input"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput()"
+            (blur)="onSearchBlur()"
+            placeholder="Search..."
+            #searchInput>
+          <button class="search-icon" (click)="toggleSearch($event)">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+
+        <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
+
+        <!-- Hamburger (mobile) -->
+        <label for="menu-toggler" class="hamburger-btn">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </label>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Sidebar with Glassmorphism (outside blend context) -->
+  <input type="checkbox" id="menu-toggler">
+
+  <aside class="sidebar-glass">
+    <div class="sidebar-header">
+      <label for="menu-toggler" class="close-icon">
+        <i class="fas fa-times"></i>
+      </label>
+    </div>
+    <ul class="sidebar-links">
       <li><a routerLink="/home" (click)="closeMenu()">Home</a></li>
       <li class="has-submenu">
         <div class="submenu-header">
-          <a href="/products">Products</a>
-          <button class="submenu-control" type="button" (click)="toggleSubmenu($event)" aria-expanded="false" aria-label="Toggle products menu">
-            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          <a href="/products" (click)="closeMenu()">Products</a>
+          <button class="submenu-control" type="button" (click)="toggleSubmenu($event)">
+            <i class="fas fa-chevron-down"></i>
           </button>
         </div>
         <ul class="submenu">
-          <li><a href="/top">Top</a></li>
-          <li><a href="/bottom">Bottom</a></li>
-          <li><a href="/accessories">Accessories</a></li>
+          <li><a href="/top" (click)="closeMenu()">Top</a></li>
+          <li><a href="/bottom" (click)="closeMenu()">Bottom</a></li>
+          <li><a href="/accessories" (click)="closeMenu()">Accessories</a></li>
         </ul>
       </li>
-      <li class="has-submenu inspiration-submenu">
+      <li class="has-submenu">
         <div class="submenu-header">
-          <a href="/#portfolio">Inspiration</a>
-          <button class="submenu-control" type="button" (click)="toggleSubmenu($event)" aria-expanded="false" aria-label="Toggle inspiration menu">
-            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          <a routerLink="/news" (click)="closeMenu()">Inspiration</a>
+          <button class="submenu-control" type="button" (click)="toggleSubmenu($event)">
+            <i class="fas fa-chevron-down"></i>
           </button>
         </div>
         <ul class="submenu">
           <li><a routerLink="/news" (click)="closeMenu()">News</a></li>
         </ul>
       </li>
-      <li><a href="/#about">About Us</a></li>
-      <li><a href="/#contact">Help</a></li>
+      <li><a (click)="navigateSection($event, 'about'); closeMenu()">About Us</a></li>
     </ul>
+  </aside>
 
-    <div class="right-icons">
-      <a [href]="isLoggedIn ? '/profile' : '/auth'" id="userIconLink"
-        [title]="isLoggedIn ? 'View profile' : 'Sign in'">
-        <i class="fas fa-user"></i>
-      </a>
-      
-      <div class="search-container" [class.active]="searchActive">
-        <input 
-          type="text" 
-          class="search-input" 
-          [(ngModel)]="searchQuery" 
-          (input)="onSearchInput()" 
-          (blur)="onSearchBlur()"
-          placeholder="Search products..."
-          #searchInput>
-        <button class="search-icon" (click)="toggleSearch($event)">
-          <i class="fas fa-search"></i>
-        </button>
-      </div>
-      
-      <a href="/cart"><i class="fas fa-shopping-cart" aria-hidden="true"></i></a>
-    </div>
-
-    <label for="menu-toggler" class="menu-overlay"></label>
-  </nav>
+  <label for="menu-toggler" class="menu-overlay"></label>
 </header>

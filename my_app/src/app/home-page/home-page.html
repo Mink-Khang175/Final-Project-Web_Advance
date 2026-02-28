@@ -1,6 +1,8 @@
 <app-header></app-header>
 
-<section class="homepage" id="home">
+<div class="stack-container" #stackContainer>
+
+<section class="homepage stack-card" id="home">
   <video autoplay muted loop playsinline class="bg-video">
     <source src="/assets/videos/Videointro.mp4" type="video/mp4">
   </video>
@@ -12,11 +14,11 @@
       <h1>Welcome to our dimension</h1>
       <p>If we vibe - we vibe.</p>
     </div>
-    <a href="#services">Shop now</a>
+    <a href="#services" (click)="scrollToSection($event, 'services')">Shop now</a>
   </div>
 </section>
 
-<section class="services" id="services">
+<section class="services stack-card" id="services">
   <h2>New Arrivals</h2>
   <p>Explore your vibe.</p>
   <div class="cards">
@@ -30,7 +32,7 @@
   </div>
 </section>
 
-<section class="portfolio" id="portfolio">
+<section class="portfolio stack-card" id="portfolio">
   <h2>Our Mood & Aesthetics</h2>
   <p>Take a look at some of our memorable moments.</p>
   <div class="slider-container">
@@ -47,41 +49,22 @@
   </div>
 </section>
 
-<section class="about" id="about">
-  <video autoplay muted loop playsinline preload="auto" poster="/assets/images/Backdrop.jpg" class="about-video">
-    <source src="/assets/videos/video about us new.mp4" type="video/mp4">
-  </video>
-  <div class="about-overlay"></div>
-  <div class="about-content" id="aboutContent" [class.show]="aboutVisible">
-    <h2 class="type-heading">About Us</h2>
-    <p class="about-typewriter">{{typedText}}</p>
-    <p class="about-signature">Avant Atelier</p>
-  </div>
-</section>
+<div class="about-footer-wrapper">
+  <section class="about" id="about">
+    <video autoplay muted loop playsinline preload="auto" poster="/assets/images/Backdrop.jpg" class="about-video">
+      <source src="/assets/videos/video about us new.mp4" type="video/mp4">
+    </video>
+    <div class="about-overlay"></div>
+    <div class="about-content" id="aboutContent" [class.show]="aboutVisible">
+      <h2 class="type-heading">About Us</h2>
+      <p class="about-typewriter">{{typedText}}</p>
+      <p class="about-signature">Avant Atelier</p>
+    </div>
+  </section>
 
-<section class="contact" id="contact">
-  <h2>Contact Us</h2>
-  <p>Reach out to us for any inquiries or collaborations.</p>
-  <div class="row">
-    <div class="col information">
-      <div class="contact-details">
-        <p><i class="fas fa-map-marker-alt"></i> 123 Atelier Avenue, District 1, Ho Chi Minh City</p>
-        <p><i class="fas fa-envelope"></i> info@avantatelier.com</p>
-        <p><i class="fas fa-phone"></i> (+84) 123-456-789</p>
-      </div>
-    </div>
-    <div class="contactForm">
-      <form (submit)="onContactSubmit($event)">
-        <input type="text" [(ngModel)]="contactForm.name" name="name" placeholder="Name*" required>
-        <input type="email" [(ngModel)]="contactForm.email" name="email" placeholder="Email*" required>
-        <textarea [(ngModel)]="contactForm.message" name="message" placeholder="Message*" required></textarea>
-        <button type="submit">Send Message</button>
-      </form>
-    </div>
-    <div id="thankYouPopup" class="thankyou-popup" [class.show]="showThankYou">
-      <span id="thankYouText">{{thankYouMessage}}</span>
-    </div>
-  </div>
-</section>
+  <footer>
+    <app-footer></app-footer>
+  </footer>
+</div>
 
-<app-footer></app-footer>
+</div>

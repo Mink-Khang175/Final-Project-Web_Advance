@@ -1,11 +1,69 @@
-:host {
+﻿:host {
   display: block;
   width: 100%;
-  min-height: 100vh;
-  overflow-y: auto;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Homepage video hero section */
+/* ==========================================
+   STACK CONTAINER - Sticky Stacking Cards
+   ========================================== */
+.stack-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge */
+  overscroll-behavior: contain;
+}
+
+.stack-container::-webkit-scrollbar {
+  width: 0;
+  display: none;
+}
+
+/* Each section is sticky - overlaps previous on scroll */
+.stack-card {
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
+  will-change: opacity, transform;
+  overflow: hidden;
+  transition: opacity 0.1s ease-out;
+  pointer-events: auto;
+}
+
+/* Z-index: later sections stack on top */
+.homepage.stack-card { z-index: 1; }
+.services.stack-card { z-index: 2; }
+.portfolio.stack-card { z-index: 3; }
+
+/* Card edge: rounded top + shadow for "sliding up" feel */
+/* Apply to all stack-cards except the first one (homepage) */
+.stack-card:not(.homepage) {
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25),
+              0 -6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* About + Footer wrapper: flows after last sticky card */
+.about-footer-wrapper {
+  position: relative;
+  z-index: 4;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.15),
+              0 -4px 16px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* ==========================================
+   HERO SECTION
+   ========================================== */
 .homepage {
   position: relative;
   height: 100vh;
@@ -13,6 +71,7 @@
   overflow: hidden;
   margin: 0;
   padding: 0;
+  background: #000;
 }
 
 .homepage .bg-video {
@@ -22,7 +81,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: -2;
+  z-index: 0;
 }
 
 .homepage .overlay {
@@ -32,7 +91,7 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.45);
-  z-index: -1;
+  z-index: 1;
 }
 
 .homepage .content {
@@ -77,61 +136,61 @@
   color: #fff;
 }
 
-/* Sections */
-section {
+/* ==========================================
+   NEW ARRIVALS SECTION (SERVICES)
+   ========================================== */
+.services {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-direction: column;
-  padding: 80px 0 0;
+  min-height: 100vh;
+  padding: 80px 0 40px;
+  background: #f2f2f2 url('/assets/images/background texture.jpg') center / cover;
 }
 
-section h2 {
+.services h2 {
   font-size: 2rem;
+  margin-bottom: 4px;
 }
 
-section > p {
+.services > p {
   text-align: center;
+  margin-bottom: 10px;
+  color: #666;
 }
 
-section .cards {
+.services .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 36px;
+  gap: 30px;
   max-width: 1200px;
-  margin-top: 50px;
-  padding: 0 10px;
+  margin-top: 30px;
+  padding: 0 20px;
   width: 100%;
 }
 
-section .cards .card {
+/* ==========================================
+   MOOD & AESTHETICS (PORTFOLIO)
+   ========================================== */
+.portfolio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 60px 0 40px;
   background: #fff;
-  padding: 40px 15px;
-  list-style: none;
-  border-radius: 5px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.04);
-  margin-bottom: 40px;
-  width: calc(100% / 3 - 30px);
+}
+
+.portfolio h2 {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.portfolio > p {
   text-align: center;
-  cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-section .cards .card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-.services .card img {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 20px;
-  border-radius: 0;
-  object-fit: cover;
-}
-
-.cards .card p {
-  padding: 0 15px;
-  margin-top: 5px;
+  color: #666;
 }
 
 /* Slider */
@@ -139,7 +198,7 @@ section .cards .card:hover {
   position: relative;
   width: 80%;
   max-width: 900px;
-  margin: 50px auto;
+  margin: 40px auto;
   overflow: hidden;
   border-radius: 10px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
@@ -193,20 +252,22 @@ section .cards .card:hover {
   right: 15px;
 }
 
-/* About section */
+/* ==========================================
+   ABOUT SECTION
+   ========================================== */
 .about {
   position: relative;
   width: 100%;
   height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
   color: #fff;
-  margin-top: 80px;
-  max-width: none;
   padding: 0;
+  background: #111;
 }
 
 .about-video {
@@ -296,103 +357,9 @@ section .cards .card:hover {
   font-size: 18px;
 }
 
-/* Contact section */
-.contact .row {
-  margin: 60px 0 90px;
-  display: flex;
-  max-width: 1200px;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.contact .row .col {
-  padding: 0 10px;
-  width: calc(100% / 2 - 50px);
-}
-
-.contact .col p {
-  margin-bottom: 10px;
-}
-
-.contact .col p i {
-  color: #7a7a7a;
-  margin-right: 10px;
-}
-
-.contact form input {
-  height: 45px;
-  margin-bottom: 20px;
-  padding: 10px;
-  width: 100%;
-  font-size: 16px;
-  outline: none;
-  border: 1px solid #bfbfbf;
-}
-
-.contact form textarea {
-  padding: 10px;
-  width: 100%;
-  font-size: 16px;
-  height: 150px;
-  outline: none;
-  resize: vertical;
-  border: 1px solid #bfbfbf;
-}
-
-.contact form button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  font-size: 17px;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-  background: #333;
-  transition: 0.2s ease;
-}
-
-.contact form button:hover {
-  background: #525252;
-}
-
-.thankyou-popup {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  background: rgba(20, 20, 20, 0.95);
-  color: #fff;
-  padding: 16px 24px;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  opacity: 0;
-  transform: translateY(-15px) scale(0.98);
-  pointer-events: none;
-  transition: all 0.4s ease;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.thankyou-popup::before {
-  content: "✔";
-  display: inline-block;
-  color: #00d084;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.thankyou-popup.show {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-/* Responsive */
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
 @media (max-width: 768px) {
   .slider-container {
     width: 95%;
@@ -405,6 +372,9 @@ section .cards .card:hover {
   }
   .about-content p {
     font-size: 16px;
+  }
+  .stack-card:not(.homepage) {
+    border-radius: 16px 16px 0 0;
   }
 }
 
@@ -419,22 +389,19 @@ section .cards .card:hover {
     font-size: 17px;
     padding: 9px 20px;
   }
-  section .cards .card {
-    width: calc(100% / 2 - 15px);
-  }
-  .contact .row {
-    flex-direction: column;
-  }
-  .contact .row .col {
-    width: 100%;
-  }
-  .contact .row .col:last-child {
-    margin-top: 40px;
-  }
 }
 
 @media screen and (max-width: 560px) {
-  section .cards .card {
-    width: 100%;
+  .homepage .content h1 {
+    font-size: 30px;
+  }
+  .services {
+    padding: 60px 0 30px;
+  }
+  .services .cards {
+    gap: 20px;
+  }
+  .stack-card:not(.homepage) {
+    border-radius: 12px 12px 0 0;
   }
 }
