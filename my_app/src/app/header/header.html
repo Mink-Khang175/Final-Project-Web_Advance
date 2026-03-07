@@ -31,7 +31,7 @@
 
       <!-- Right icons -->
       <div class="right-icons">
-        <a [href]="isLoggedIn ? '/profile' : '/auth'" id="userIconLink"
+        <a [routerLink]="isLoggedIn ? '/profile' : '/auth'" id="userIconLink"
           [title]="isLoggedIn ? 'View profile' : 'Sign in'">
           <i class="fas fa-user"></i>
         </a>
@@ -50,7 +50,51 @@
           </button>
         </div>
 
-        <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
+        <!-- Cart icon with dropdown -->
+        <div class="cart-icon-wrap" (mouseenter)="openCart()" (mouseleave)="closeCart()">
+          <a class="cart-trigger" (click)="toggleCart($event)">
+            <i class="fas fa-shopping-bag"></i>
+            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+          </a>
+
+          <!-- Cart Dropdown -->
+          <div class="cart-dropdown" [class.open]="cartOpen">
+            <div class="cart-dropdown-header">Cart</div>
+
+            <div class="cart-dropdown-empty" *ngIf="cartItems.length === 0">
+              <i class="fas fa-shopping-bag"></i>
+              <p>Your cart is empty.</p>
+            </div>
+
+            <div class="cart-dropdown-items" *ngIf="cartItems.length > 0">
+              <div class="cart-dropdown-item" *ngFor="let item of cartItems">
+                <div class="cdi-image">
+                  <img [src]="item.image || '/assets/images/placeholder.jpg'" [alt]="item.productName">
+                </div>
+                <div class="cdi-info">
+                  <p class="cdi-name">{{ item.productName }}</p>
+                  <p class="cdi-variant">{{ item.size }} / {{ item.color }}</p>
+                  <p class="cdi-qty">{{ item.quantity }}</p>
+                </div>
+                <div class="cdi-right">
+                  <button class="cdi-remove" (click)="removeFromCart(item)"><i class="fas fa-times"></i></button>
+                  <p class="cdi-price">{{ item.price * item.quantity | number }}₫</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="cart-dropdown-footer" *ngIf="cartItems.length > 0">
+              <div class="cart-total">
+                <span>TOTAL:</span>
+                <span class="cart-total-amount">{{ cartTotal | number }}₫</span>
+              </div>
+              <div class="cart-footer-actions">
+                <button class="cart-btn view" routerLink="/cart" (click)="cartOpen = false">VIEW CART</button>
+                <button class="cart-btn pay" routerLink="/checkout" (click)="cartOpen = false">PAYMENT</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Hamburger (mobile) -->
         <label for="menu-toggler" class="hamburger-btn">

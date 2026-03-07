@@ -3,7 +3,7 @@
         
         <!-- SIGN UP FORM (Expanded Fields) -->
         <div class="form-container sign-up-container">
-          <form (submit)="onSubmit($event, 'signup')">
+          <form (submit)="onSignUp($event)">
             <h1>Create Account</h1>
             <div class="social-container">
               <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
@@ -14,21 +14,22 @@
             
             <!-- Scrollable Input Area -->
             <div class="scrollable-inputs">
-              <input type="text" placeholder="Full Name" required />
-              <input type="email" placeholder="Email Address" required />
-              <input type="tel" placeholder="Phone Number" />
-              <input type="text" placeholder="Address / City" />
-              <input type="password" placeholder="Password" required />
-              <input type="password" placeholder="Confirm Password" required />
+              <input type="text" placeholder="Full Name" [(ngModel)]="signupName" name="signupName" required />
+              <input type="email" placeholder="Email Address" [(ngModel)]="signupEmail" name="signupEmail" required />
+              <input type="tel" placeholder="Phone Number" [(ngModel)]="signupPhone" name="signupPhone" />
+              <input type="text" placeholder="Address / City" [(ngModel)]="signupAddress" name="signupAddress" />
+              <input type="password" placeholder="Password" [(ngModel)]="signupPassword" name="signupPassword" required />
+              <input type="password" placeholder="Confirm Password" [(ngModel)]="signupConfirmPassword" name="signupConfirmPassword" required />
             </div>
 
+            <div class="error-msg" *ngIf="errorMessage && isSignUpMode">{{ errorMessage }}</div>
             <button type="submit">Sign Up</button>
           </form>
         </div>
 
         <!-- SIGN IN FORM -->
         <div class="form-container sign-in-container">
-          <form (submit)="onSubmit($event, 'signin')">
+          <form (submit)="onSignIn($event)">
             <h1>Sign in</h1>
             <div class="social-container">
               <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
@@ -36,9 +37,10 @@
               <a href="#" class="social"><i class="fab fa-linkedin-in"></i></a>
             </div>
             <span>or use your account</span>
-            <input type="email" placeholder="Email" required />
-            <input type="password" placeholder="Password" required />
+            <input type="email" placeholder="Email" [(ngModel)]="loginEmail" name="loginEmail" required />
+            <input type="password" placeholder="Password" [(ngModel)]="loginPassword" name="loginPassword" required />
             <a href="#" class="forgot-link">Forgot your password?</a>
+            <div class="error-msg" *ngIf="errorMessage && !isSignUpMode">{{ errorMessage }}</div>
             <button type="submit">Sign In</button>
           </form>
         </div>

@@ -86,13 +86,31 @@
 
             <!-- Orders -->
             <div *ngSwitchCase="'orders'" class="orders-section fade-in">
-              <div class="empty-state">
+              <div class="empty-state" *ngIf="!loadingOrders && orders.length === 0">
                 <div class="empty-icon-wrap">
                   <i class="fas fa-shopping-bag"></i>
                 </div>
                 <h3>No Orders Yet</h3>
                 <p>Your order history will appear here once you make a purchase.</p>
-                <a routerLink="/products" class="discover-btn">Discover Our Collection</a>
+                <a routerLink="/home" class="discover-btn">Discover Our Collection</a>
+              </div>
+              <div *ngIf="loadingOrders" class="empty-state">
+                <p>Loading orders...</p>
+              </div>
+              <div *ngIf="!loadingOrders && orders.length > 0" class="orders-list">
+                <div class="order-item" *ngFor="let order of orders" style="border:1px solid #e0e0e0; border-radius:8px; padding:16px; margin-bottom:12px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong>Order #{{ order.orderNumber }}</strong>
+                    <span style="text-transform:capitalize; font-size:13px; padding:4px 10px; border-radius:12px; background:#f0f0f0;">{{ order.status }}</span>
+                  </div>
+                  <p style="font-size:13px; color:#666;">{{ order.createdAt | date:'medium' }}</p>
+                  <div *ngFor="let item of order.items" style="font-size:14px; padding:4px 0;">
+                    {{ item.productName }} &times; {{ item.quantity }} — {{ item.price | currency:'USD' }}
+                  </div>
+                  <div style="text-align:right; font-weight:600; margin-top:8px;">
+                    Total: {{ order.totalAmount | currency:'USD' }}
+                  </div>
+                </div>
               </div>
             </div>
 

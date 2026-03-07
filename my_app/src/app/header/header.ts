@@ -2,6 +2,7 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { ApiService, CartItem } from '../api.service';
 
 @Component({
   selector: 'app-header',
@@ -18,6 +19,15 @@ export class Header implements OnInit, OnDestroy {
   isHomePage = false;
   activeSection = 'home';
 
+  // Cart dropdown
+  cartOpen = false;
+  cartItems: CartItem[] = [];
+  cartCount = 0;
+  cartTotal = 0;
+  private cartHoverTimeout: any;
+  private userId = '';
+  private cartEventListener: (() => void) | null = null;
+
   private sectionObserver: IntersectionObserver | null = null;
   private observedElements: Element[] = [];
   private scrollContainer: Element | null = null;
@@ -26,17 +36,30 @@ export class Header implements OnInit, OnDestroy {
     @Inject(PLATFORM_ID) private platformId: Object,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private zone: NgZone
+    private zone: NgZone,
+    private api: ApiService
   ) {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
-        this.isHomePage = event.url === '/home' || event.url === '/';
+        // Check if we're on home page (ignore query params and fragments)
+        const urlPath = event.url.split('?')[0].split('#')[0];
+        const wasHomePage = this.isHomePage;
+        this.isHomePage = urlPath === '/home' || urlPath === '/';
+        
         if (this.isHomePage) {
+          // Reset scroll state when entering home page
+          if (!wasHomePage) {
+            this.isScrolled = false;
+            this.activeSection = 'home';
+          }
           setTimeout(() => this.initSectionObserver(), 600);
         } else {
           this.destroySectionObserver();
           this.activeSection = '';
         }
+        
+        // Trigger change detection
+        this.cdr.detectChanges();
       }
     });
   }
@@ -57,8 +80,16 @@ export class Header implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.checkLoginStatus();
-      this.isHomePage = this.router.url === '/home' || this.router.url === '/';
+      this.loadCart();
+      // Listen for cart update events dispatched by other components
+      this.cartEventListener = () => this.loadCart();
+      window.addEventListener('cart-updated', this.cartEventListener);
+      // Check if we're on home page (ignore query params and fragments)
+      const urlPath = this.router.url.split('?')[0].split('#')[0];
+      this.isHomePage = urlPath === '/home' || urlPath === '/';
+      
       if (this.isHomePage) {
+        this.activeSection = 'home';
         setTimeout(() => this.initSectionObserver(), 600);
       }
     }
@@ -66,6 +97,8 @@ export class Header implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.destroySectionObserver();
+    if (this.cartHoverTimeout) clearTimeout(this.cartHoverTimeout);
+    if (this.cartEventListener) window.removeEventListener('cart-updated', this.cartEventListener);
   }
 
   initSectionObserver(): void {
@@ -75,6 +108,11 @@ export class Header implements OnInit, OnDestroy {
     this.scrollContainer = document.querySelector('.stack-container');
     const sections = document.querySelectorAll('section[id]');
     if (!sections.length || !this.scrollContainer) return;
+
+    // Reset scroll position to top when observer is initialized
+    if (this.scrollContainer.scrollTop > 0) {
+      this.scrollContainer.scrollTop = 0;
+    }
 
     const observerOptions: IntersectionObserverInit = {
       root: this.scrollContainer,
@@ -247,6 +285,51 @@ export class Header implements OnInit, OnDestroy {
   checkLoginStatus(): void {
     const user = localStorage.getItem('loggedInUser');
     this.isLoggedIn = !!user;
+    if (user) {
+      this.userId = JSON.parse(user)._id || '';
+    }
+  }
+
+  loadCart(): void {
+    const user = localStorage.getItem('loggedInUser');
+    if (!user) { this.cartItems = []; this.cartCount = 0; this.cartTotal = 0; return; }
+    const userId = JSON.parse(user)._id || '';
+    if (!userId) return;
+    this.api.getCart(userId).subscribe({
+      next: (cart) => {
+        this.cartItems = cart?.items || [];
+        this.cartCount = this.cartItems.reduce((s, i) => s + i.quantity, 0);
+        this.cartTotal = cart?.totalAmount || this.cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
+        this.cdr.detectChanges();
+      },
+      error: () => { this.cartItems = []; this.cartCount = 0; this.cartTotal = 0; }
+    });
+  }
+
+  openCart(): void {
+    if (this.cartHoverTimeout) clearTimeout(this.cartHoverTimeout);
+    this.cartOpen = true;
+    this.loadCart();
+  }
+
+  closeCart(): void {
+    this.cartHoverTimeout = setTimeout(() => { this.cartOpen = false; }, 200);
+  }
+
+  toggleCart(event: Event): void {
+    event.preventDefault();
+    this.cartOpen = !this.cartOpen;
+    if (this.cartOpen) this.loadCart();
+  }
+
+  removeFromCart(item: CartItem): void {
+    const user = localStorage.getItem('loggedInUser');
+    if (!user || !item._id) return;
+    const userId = JSON.parse(user)._id || '';
+    this.api.removeCartItem(userId, item._id).subscribe({
+      next: () => this.loadCart(),
+      error: () => {}
+    });
   }
 
   toggleSubmenu(event: Event): void {

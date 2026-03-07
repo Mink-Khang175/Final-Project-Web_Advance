@@ -405,3 +405,10 @@
         opacity: 1;
       }
     }
+
+    .error-msg {
+      color: #e74c3c;
+      font-size: 13px;
+      margin: 6px 0;
+      text-align: center;
+    }

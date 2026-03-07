@@ -1,10 +1,11 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { Header } from '../header/header';
 import { Footer } from '../footer/footer';
 import { MembershipCard } from '../membership-card/membership-card';
+import { ApiService, Order as ApiOrder } from '../api.service';
 
 interface UserInfo {
   fullName: string;
@@ -43,16 +44,16 @@ export class Profile implements OnInit {
   
   // User Information
   userInfo: UserInfo = {
-    fullName: 'JOHN DOE',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Fashion Street',
-    city: 'New York',
-    postalCode: '10001',
-    country: 'United States',
-    dateOfBirth: '1990-01-15',
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    country: '',
+    dateOfBirth: '',
     gender: 'male',
-    password: '••••••••',
+    password: '',
     newsletter: true,
     notifications: true
   };
@@ -61,8 +62,19 @@ export class Profile implements OnInit {
   isEditMode = false;
   tempUserInfo: UserInfo | null = null;
   showPassword = false;
+
+  // Orders from API
+  orders: ApiOrder[] = [];
+  loadingOrders = false;
+
+  // Logged in user ID from MongoDB
+  private userId = '';
   
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private api: ApiService,
+    private router: Router
+  ) {}
   
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
@@ -74,9 +86,47 @@ export class Profile implements OnInit {
     const savedUser = localStorage.getItem('loggedInUser');
     if (savedUser) {
       const userData = JSON.parse(savedUser);
-      this.userInfo = { ...this.userInfo, ...userData };
+      this.userId = userData._id || '';
+      this.userInfo = {
+        ...this.userInfo,
+        fullName: userData.name || userData.fullName || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        address: userData.address || '',
+        city: userData.city || '',
+        postalCode: userData.postalCode || '',
+        country: userData.country || '',
+        dateOfBirth: userData.dateOfBirth || '',
+        gender: userData.gender || 'male',
+        password: userData.password || ''
+      };
       this.userName = this.userInfo.fullName;
       this.userEmail = this.userInfo.email;
+      this.memberStatus = userData.membershipLevel || 'Silver';
+
+      // Load fresh data from backend
+      if (this.userId) {
+        this.api.getUser(this.userId).subscribe({
+          next: (user) => {
+            this.userInfo.fullName = user.name;
+            this.userInfo.email = user.email;
+            this.userInfo.phone = user.phone || '';
+            this.userInfo.address = user.address || '';
+            this.userInfo.city = user.city || '';
+            this.userInfo.postalCode = user.postalCode || '';
+            this.userInfo.country = user.country || '';
+            this.userInfo.dateOfBirth = user.dateOfBirth || '';
+            this.userInfo.gender = user.gender || 'male';
+            this.userInfo.password = user.password || '';
+            this.userName = user.name;
+            this.userEmail = user.email;
+            this.memberStatus = user.membershipLevel || 'Silver';
+          },
+          error: () => {} // Use cached data
+        });
+      }
+    } else {
+      this.router.navigate(['/auth']);
     }
   }
   
@@ -96,18 +146,42 @@ export class Profile implements OnInit {
   
   saveUserInfo(): void {
     if (isPlatformBrowser(this.platformId)) {
-      // Update membership card
       this.userName = this.userInfo.fullName;
       this.userEmail = this.userInfo.email;
-      
-      // Save to localStorage
-      localStorage.setItem('loggedInUser', JSON.stringify(this.userInfo));
-      
-      // Exit edit mode
-      this.isEditMode = false;
-      this.tempUserInfo = null;
-      
-      alert('Your information has been updated successfully!');
+
+      // Save to backend
+      if (this.userId) {
+        this.api.updateUser(this.userId, {
+          name: this.userInfo.fullName,
+          email: this.userInfo.email,
+          password: this.userInfo.password,
+          phone: this.userInfo.phone,
+          address: this.userInfo.address,
+          city: this.userInfo.city,
+          postalCode: this.userInfo.postalCode,
+          country: this.userInfo.country,
+          dateOfBirth: this.userInfo.dateOfBirth,
+          gender: this.userInfo.gender
+        }).subscribe({
+          next: (updatedUser) => {
+            localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
+            this.isEditMode = false;
+            this.tempUserInfo = null;
+            alert('Your information has been updated successfully!');
+          },
+          error: () => {
+            // Fallback: save locally
+            localStorage.setItem('loggedInUser', JSON.stringify(this.userInfo));
+            this.isEditMode = false;
+            this.tempUserInfo = null;
+            alert('Saved locally (server unavailable).');
+          }
+        });
+      } else {
+        localStorage.setItem('loggedInUser', JSON.stringify(this.userInfo));
+        this.isEditMode = false;
+        this.tempUserInfo = null;
+      }
     }
   }
   
@@ -121,7 +195,21 @@ export class Profile implements OnInit {
     }
     this.activeMenu = menu;
 
-    // Scroll to top of content area to prevent jumping to footer
+    // Load orders when tab is activated
+    if (menu === 'orders' && this.userId) {
+      this.loadingOrders = true;
+      this.api.getOrdersByUser(this.userId).subscribe({
+        next: (orders) => {
+          this.orders = orders || [];
+          this.loadingOrders = false;
+        },
+        error: () => {
+          this.orders = [];
+          this.loadingOrders = false;
+        }
+      });
+    }
+
     if (isPlatformBrowser(this.platformId)) {
       setTimeout(() => {
         const contentHeader = document.querySelector('.content-header');
@@ -153,7 +241,7 @@ export class Profile implements OnInit {
     if (event) {
       event.preventDefault();
     }
-    // Logout logic here
-    console.log('Logging out...');
+    localStorage.removeItem('loggedInUser');
+    this.router.navigate(['/auth']);
   }
 }

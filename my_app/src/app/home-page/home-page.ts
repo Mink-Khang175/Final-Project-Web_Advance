@@ -1,9 +1,11 @@
 ﻿import { Component, OnInit, OnDestroy, AfterViewInit, Inject, PLATFORM_ID, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Header } from '../header/header';
 import { Footer } from '../footer/footer';
 import { ProductCard, Product } from '../product-card/product-card';
+import { ApiService } from '../api.service';
 
 @Component({
   selector: 'app-home-page',
@@ -16,6 +18,27 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
   slides: NodeListOf<Element> | null = null;
   slider: HTMLElement | null = null;
   slideInterval: any;
+
+  // Slide typewriter
+  slideQuoteText = '';
+  slideAuthor = '';
+  slideQuoteDone = false;
+  private slideTypewriterInterval: any;
+  private slideTypewriterTimeout: any;
+  private readonly slideQuotes = [
+    {
+      text: 'Believe you can and you\'re halfway there.\nBelieve in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.',
+      author: 'Avant Atelier'
+    },
+    {
+      text: '"Confidence is quiet. Belief in\nyourself is louder than any\nobstacle."',
+      author: 'Drew Feig'
+    },
+    {
+      text: 'Style is a way to say who you are\nwithout having to speak.',
+      author: 'Avant Atelier'
+    }
+  ];
 
   aboutVisible = false;
   typedText = '';
@@ -30,7 +53,9 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private api: ApiService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -52,6 +77,8 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     if (this.slideInterval) clearInterval(this.slideInterval);
+    if (this.slideTypewriterInterval) clearInterval(this.slideTypewriterInterval);
+    if (this.slideTypewriterTimeout) clearTimeout(this.slideTypewriterTimeout);
     if (this.typewriterInterval) clearInterval(this.typewriterInterval);
     if (this.typewriterTimeout) clearTimeout(this.typewriterTimeout);
     if (this.aboutObserver) {
@@ -62,6 +89,45 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadNewArrivals(): void {
+    // Try loading from backend API first, fallback to local JSON
+    this.api.getProducts().subscribe({
+      next: (products) => {
+        this.newArrivals = products
+          .filter((p: any) => p.isNewArrival)
+          .slice(0, 4)
+          .map((p: any) => ({
+            id: p._id,
+            name: p.name,
+            price: p.price,
+            image: p.image || '',
+            sale: p.originalPrice && p.discount ? p.price : undefined,
+            salePercent: p.discount,
+            soldOut: (p.stock ?? 0) <= 0,
+            category: p.category
+          }));
+        // If no new arrivals flagged, show first 4
+        if (this.newArrivals.length === 0) {
+          this.newArrivals = products.slice(0, 4).map((p: any) => ({
+            id: p._id,
+            name: p.name,
+            price: p.originalPrice || p.price,
+            image: p.image || '',
+            sale: p.discount ? p.price : undefined,
+            salePercent: p.discount,
+            soldOut: (p.stock ?? 0) <= 0,
+            category: p.category
+          }));
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Fallback to local JSON
+        this.loadFromLocalJson();
+      }
+    });
+  }
+
+  private loadFromLocalJson(): void {
     fetch('/assets/data/NewArrivals.json')
       .then(res => res.json())
       .then(arrivals => {
@@ -82,15 +148,53 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
       this.slides = document.querySelectorAll('.slide');
       this.slider = document.querySelector('.slider');
       if (this.slides && this.slider) {
-        this.slideInterval = setInterval(() => this.moveSlide(1), 5000);
+        this.startSlideTypewriter();
       }
-    }, 100);
+    }, 400);
+  }
+
+  private startSlideTypewriter(): void {
+    if (this.slideTypewriterInterval) clearInterval(this.slideTypewriterInterval);
+    if (this.slideTypewriterTimeout) clearTimeout(this.slideTypewriterTimeout);
+
+    const quote = this.slideQuotes[this.currentSlide];
+    this.slideQuoteText = '';
+    this.slideAuthor = quote.author;
+    this.slideQuoteDone = false;
+    this.cdr.detectChanges();
+
+    let index = 0;
+    this.slideTypewriterInterval = setInterval(() => {
+      if (index < quote.text.length) {
+        this.slideQuoteText += quote.text.charAt(index);
+        index++;
+        this.cdr.detectChanges();
+      } else {
+        clearInterval(this.slideTypewriterInterval);
+        this.slideQuoteDone = true;
+        this.cdr.detectChanges();
+        // After quote finishes, wait 2.5s then advance slide
+        this.slideTypewriterTimeout = setTimeout(() => {
+          this.moveSlide(1);
+        }, 2500);
+      }
+    }, 40);
   }
 
   moveSlide(direction: number): void {
     if (!this.slides || !this.slider) return;
     this.currentSlide = (this.currentSlide + direction + this.slides.length) % this.slides.length;
     this.slider.style.transform = `translateX(-${this.currentSlide * 100}%)`;
+    this.cdr.detectChanges();
+    // Start typewriter for the new slide
+    setTimeout(() => this.startSlideTypewriter(), 850);
+  }
+
+  // Called from prev/next buttons — cancels auto-advance then resumes
+  moveSlideManual(direction: number): void {
+    if (this.slideTypewriterInterval) clearInterval(this.slideTypewriterInterval);
+    if (this.slideTypewriterTimeout) clearTimeout(this.slideTypewriterTimeout);
+    this.moveSlide(direction);
   }
 
   /* ============================================
@@ -239,14 +343,29 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getProductDetailUrl(product: Product): string {
-    return `top-detail.html?src=new&id=${encodeURIComponent(product.id)}&return=index.html`;
+    return `/product-detail?id=${encodeURIComponent(product.id)}`;
   }
 
   handleBuyNow(product: Product): void {
-    window.location.href = this.getProductDetailUrl(product);
+    this.router.navigate(['/product-detail'], { queryParams: { id: product.id } });
   }
 
   handleAddToCart(product: Product): void {
-    alert(`${product.name} added to cart!`);
+    const user = localStorage.getItem('loggedInUser');
+    if (!user) {
+      this.router.navigate(['/auth']);
+      return;
+    }
+    const userData = JSON.parse(user);
+    this.api.addToCart(userData._id, {
+      productId: product.id,
+      productName: product.name,
+      price: product.sale || product.price,
+      quantity: 1,
+      image: product.image
+    }).subscribe({
+      next: () => alert(`${product.name} added to cart!`),
+      error: () => alert(`${product.name} added to cart! (offline)`)
+    });
   }
 }

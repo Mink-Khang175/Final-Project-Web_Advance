@@ -1,0 +1,107 @@
+<app-header></app-header>
+
+<div class="cart-page-wrapper">
+
+  <!-- Hero Banner -->
+  <div class="cart-hero">
+    <div class="cart-hero-overlay"></div>
+    <div class="cart-hero-content">
+      <p class="cart-hero-sub">AVANT ATELIER</p>
+      <h1>Your Cart</h1>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="cart-content" *ngIf="!loading">
+
+    <!-- Empty state -->
+    <div class="cart-empty" *ngIf="cartItems.length === 0">
+      <i class="fas fa-shopping-bag"></i>
+      <h2>Your cart is empty.</h2>
+      <p>Looks like you haven't added anything yet.</p>
+      <a routerLink="/home" class="btn-continue">Discover The Collection</a>
+    </div>
+
+    <!-- Cart grid -->
+    <div class="cart-grid" *ngIf="cartItems.length > 0">
+
+      <!-- Left: items -->
+      <div class="cart-items-col">
+        <div class="cart-items-header">
+          <span>PRODUCT</span>
+          <span>PRICE</span>
+          <span>QTY</span>
+          <span>TOTAL</span>
+        </div>
+
+        <div class="cart-item" *ngFor="let item of cartItems">
+          <div class="ci-product">
+            <div class="ci-image">
+              <img [src]="item.image || '/assets/images/placeholder.jpg'" [alt]="item.productName">
+            </div>
+            <div class="ci-details">
+              <p class="ci-name">{{ item.productName }}</p>
+              <p class="ci-variant" *ngIf="item.size || item.color">
+                <span *ngIf="item.size">{{ item.size }}</span>
+                <span *ngIf="item.size && item.color"> / </span>
+                <span *ngIf="item.color">{{ item.color }}</span>
+              </p>
+              <button class="ci-remove" (click)="removeItem(item)"><i class="fas fa-trash-alt"></i> Remove</button>
+            </div>
+          </div>
+
+          <div class="ci-price">{{ item.price | number }}₫</div>
+
+          <div class="ci-qty">
+            <button class="qty-btn" (click)="decreaseQty(item)" [disabled]="item.quantity <= 1">−</button>
+            <span class="qty-val">{{ item.quantity }}</span>
+            <button class="qty-btn" (click)="increaseQty(item)">+</button>
+          </div>
+
+          <div class="ci-total">{{ item.price * item.quantity | number }}₫</div>
+        </div>
+
+        <div class="cart-continue">
+          <a routerLink="/home"><i class="fas fa-arrow-left"></i> Continue Shopping</a>
+        </div>
+      </div>
+
+      <!-- Right: summary -->
+      <div class="cart-summary">
+        <h3>ORDER SUMMARY</h3>
+
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>{{ subtotal | number }}₫</span>
+        </div>
+        <div class="summary-row">
+          <span>Shipping</span>
+          <span *ngIf="shipping === 0" class="free">FREE</span>
+          <span *ngIf="shipping > 0">{{ shipping | number }}₫</span>
+        </div>
+        <p class="shipping-note" *ngIf="shipping > 0">Free shipping on orders over 500,000₫</p>
+
+        <div class="summary-divider"></div>
+
+        <div class="summary-row total-row">
+          <span>TOTAL</span>
+          <span>{{ total | number }}₫</span>
+        </div>
+
+        <button class="btn-checkout" (click)="checkout()">
+          PROCEED TO CHECKOUT
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="cart-loading" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading your cart...</p>
+  </div>
+
+</div>
+
+<app-footer></app-footer>
