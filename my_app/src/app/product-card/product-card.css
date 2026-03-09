@@ -38,7 +38,7 @@
   opacity: 0;
 }
 
-.product-card:hover .card-image img:first-child {
+.product-card:hover .card-image:has(.img-hover) img:first-child {
   opacity: 0;
 }
 

@@ -10,14 +10,9 @@
           <a [class.active]="isHomePage && activeSection === 'home'"
              (click)="navigateSection($event, 'home')">Home</a>
         </li>
-        <li class="has-dropdown">
-          <a [class.active]="isHomePage && activeSection === 'services'"
-             (click)="navigateSection($event, 'services')">Products</a>
-          <ul class="dropdown">
-            <li><a href="/top">Top</a></li>
-            <li><a href="/bottom">Bottom</a></li>
-            <li><a href="/accessories">Accessories</a></li>
-          </ul>
+        <li>
+          <a routerLink="/product-list"
+             [class.active]="isHomePage && activeSection === 'services'">Products</a>
         </li>
         <li>
           <a [class.active]="isHomePage && activeSection === 'portfolio'"

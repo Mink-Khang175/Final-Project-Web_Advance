@@ -171,44 +171,32 @@ export class Header implements OnInit, OnDestroy {
     const scrollTop = container.scrollTop;
     const containerHeight = container.clientHeight;
     const scrollHeight = container.scrollHeight;
-    const sections = document.querySelectorAll('section[id]');
 
-    // Check if scrolled to about section (detect earlier, not waiting for footer)
+    // Detect "about" section near bottom
     if (scrollTop + containerHeight >= scrollHeight - containerHeight * 0.7) {
       if (this.activeSection !== 'about') {
-        this.zone.run(() => {
-          this.activeSection = 'about';
-          this.cdr.detectChanges();
-        });
+        this.zone.run(() => { this.activeSection = 'about'; this.cdr.detectChanges(); });
       }
       return;
     }
 
-    let closestSection = 'home';
-    let closestDistance = Infinity;
+    // For sticky-stack layout each section is ~100vh.
+    // Use el.offsetTop directly (natural flow position relative to scroll container)
+    // which is unaffected by sticky visual repositioning.
+    const sectionIds = ['home', 'services', 'portfolio'];
+    let activeId = 'home';
 
-    sections.forEach((section) => {
-      const el = section as HTMLElement;
-      const rect = el.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      
-      // Calculate position relative to container viewport
-      const relativeTop = rect.top - containerRect.top;
-      const sectionCenter = relativeTop + rect.height / 2;
-      const viewCenter = containerHeight / 2;
-      const distance = Math.abs(sectionCenter - viewCenter);
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestSection = el.id;
+    for (const id of sectionIds) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      // Activate this section when scrollTop has passed its natural top minus half a viewport
+      if (scrollTop >= el.offsetTop - containerHeight * 0.5) {
+        activeId = id;
       }
-    });
+    }
 
-    if (this.activeSection !== closestSection) {
-      this.zone.run(() => {
-        this.activeSection = closestSection;
-        this.cdr.detectChanges();
-      });
+    if (this.activeSection !== activeId) {
+      this.zone.run(() => { this.activeSection = activeId; this.cdr.detectChanges(); });
     }
   }
 

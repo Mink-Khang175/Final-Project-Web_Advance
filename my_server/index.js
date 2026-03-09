@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -20,12 +21,17 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// MongoDB Connection - Kết nối đến database clothing_shop
-const MONGODB_URI = 'mongodb://localhost:27017/clothing_shop';
+// MongoDB Connection - Kết nối đến MongoDB Atlas (clothing_shop)
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI is not defined in .env file');
+  process.exit(1);
+}
 
 mongoose.connect(MONGODB_URI)
   .then(() => {
-    console.log('✅ Connected to MongoDB successfully!');
+    console.log('✅ Connected to MongoDB Atlas successfully!');
     console.log('📊 Database: clothing_shop');
   })
   .catch((err) => {

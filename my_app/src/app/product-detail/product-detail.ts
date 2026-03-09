@@ -14,6 +14,7 @@ interface ApiProduct {
   originalPrice?: number;
   discount?: number;
   image?: string;
+  images?: string[];
   description?: string;
   sizes?: string[];
   colors?: string[];
@@ -87,8 +88,12 @@ export class ProductDetail implements OnInit {
   }
 
   private setupProduct(p: ApiProduct): void {
-    this.mainImage = p.image || '';
-    this.gallerySources = p.image ? [p.image] : [];
+    if (p.images && p.images.length > 0) {
+      this.gallerySources = p.images;
+    } else {
+      this.gallerySources = p.image ? [p.image] : [];
+    }
+    this.mainImage = this.gallerySources[0] || '';
 
     const base = p.originalPrice ?? p.price;
     const sale = p.discount ? p.price : null;
@@ -113,6 +118,7 @@ export class ProductDetail implements OnInit {
       price: base,
       sale: sale && sale < base ? sale : undefined,
       image: p.image || '',
+      images: p.images,
       category: p.category
     };
   }

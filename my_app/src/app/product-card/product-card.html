@@ -4,9 +4,9 @@
   <span class="badge badge--soldout" *ngIf="product.soldOut">SOLD OUT</span>
 
   <div class="card-image">
-    <img [src]="product.image" [alt]="product.name" loading="lazy">
-    <img *ngIf="product.imageHover"
-         [src]="product.imageHover"
+    <img [src]="product.images?.[0] || product.image" [alt]="product.name" loading="lazy">
+    <img *ngIf="product.images?.[1] || product.imageHover"
+         [src]="product.images?.[1] || product.imageHover"
          [alt]="product.name"
          class="img-hover"
          loading="lazy">

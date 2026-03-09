@@ -42,6 +42,7 @@ export class ProductListPage implements OnInit {
           name: p.name,
           price: p.originalPrice || p.price,
           image: p.image || '',
+          images: p.images,
           sale: p.discount ? p.price : undefined,
           salePercent: p.discount,
           soldOut: (p.stock ?? 0) <= 0,

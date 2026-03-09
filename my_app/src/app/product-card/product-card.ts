@@ -8,6 +8,7 @@ export interface Product {
   price: number;
   image: string;
   imageHover?: string;
+  images?: string[];    // mảng nhiều ảnh
   sale?: number;
   salePercent?: number;
   soldOut?: boolean;
