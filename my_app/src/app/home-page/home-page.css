@@ -1,6 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Karumbi&display=swap');
-
-:host {
+﻿:host {
   display: block;
   width: 100%;
   height: 100vh;
@@ -142,34 +140,122 @@
    NEW ARRIVALS SECTION (SERVICES)
    ========================================== */
 .services {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  min-height: 100vh;
-  padding: 80px 0 40px;
-  background: #f2f2f2 url('/assets/images/background texture.jpg') center / cover;
+  padding: 0;
+  background: none;
 }
 
-.services h2 {
-  font-size: 2rem;
-  margin-bottom: 4px;
-}
-
-.services > p {
-  text-align: center;
-  margin-bottom: 10px;
-  color: #666;
-}
-
-.services .cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 30px;
-  max-width: 1200px;
-  margin-top: 30px;
-  padding: 0 20px;
+.new-arrivals-poster {
+  position: relative;
   width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.new-arrivals-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* TƯƠNG TÁC CHÉO: Khi hover nút, hình nền zoom nhẹ */
+.new-arrivals-poster:has(.btn-glass:hover) img,
+.new-arrivals-poster:has(.btn-solid:hover) img {
+  transform: scale(1.05);
+}
+
+.poster-btn {
+  position: absolute;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  border-radius: 40px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- VISIT LOOKBOOK: Glassmorphism + fill ---- */
+.btn-glass {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #000;
+  position: absolute;
+  overflow: hidden;
+  transition: color 0.4s ease;
+}
+
+.btn-glass::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  transition: top 0.4s cubic-bezier(0.7, 0, 0.2, 1);
+  z-index: -1;
+}
+
+.btn-glass:hover {
+  color: #fff;
+  border-color: #000;
+}
+
+.btn-glass:hover::before {
+  top: 0;
+}
+
+/* ---- ALL PRODUCTS: Text shift + arrow reveal ---- */
+.btn-solid {
+  background: #fff;
+  border: 1px solid #000;
+  color: #000;
+  position: absolute;
+  overflow: hidden;
+  padding-right: 2.5rem;
+  transition: background 0.2s;
+}
+
+.btn-solid .text {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.btn-solid .arrow {
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.btn-solid:hover .text {
+  transform: translateX(-10px);
+}
+
+.btn-solid:hover .arrow {
+  right: 1.2rem;
+  opacity: 1;
+}
+
+.poster-btn--topleft {
+  top: 110px;
+  left: 48px;
+}
+
+.poster-btn--bottomright {
+  bottom: 48px;
+  right: 48px;
 }
 
 /* ==========================================

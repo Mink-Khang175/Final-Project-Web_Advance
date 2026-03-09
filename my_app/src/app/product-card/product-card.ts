@@ -42,9 +42,17 @@ export class ProductCard {
   }
 
   navigateToDetail(): void {
-    if (this.detailUrl) {
-      window.location.href = this.detailUrl;
+    if (!this.detailUrl) return;
+    // Parse path + queryParams from detailUrl e.g. /product-detail?id=abc
+    const [path, query] = this.detailUrl.split('?');
+    const queryParams: Record<string, string> = {};
+    if (query) {
+      query.split('&').forEach(p => {
+        const [k, v] = p.split('=');
+        queryParams[k] = decodeURIComponent(v);
+      });
     }
+    this.router.navigate([path], { queryParams });
   }
 
   get displayPrice(): number {

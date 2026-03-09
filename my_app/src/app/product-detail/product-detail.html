@@ -2,133 +2,127 @@
 
 <div class="detail-toast-container" id="detail-toast-container"></div>
 
-<div class="container detail-container">
-    <a class="back-link" id="detailBackLink" [routerLink]="backLink.href">{{ backLink.label }}</a>
+<div class="pd-page">
+  <div class="pd-container">
 
-    <div class="detail" *ngIf="product">
-        <div class="media">
-            <div class="main-image">
-                <img [src]="mainImage" [alt]="product.name" id="detailMainImage">
-            </div>
-            <div class="thumbnails" id="detailThumbnails">
-                <button 
-                    *ngFor="let src of gallerySources; let i = index" 
-                    type="button" 
-                    class="thumb-btn"
-                    [class.active]="mainImage === src"
-                    (click)="selectImage(src)">
-                    <img [src]="src" [alt]="product.name + ' view ' + (i + 1)">
-                </button>
-            </div>
-        </div>
+    <!-- Breadcrumb -->
+    <nav class="pd-breadcrumb">
+      <a routerLink="/product-list">ALL PRODUCTS</a>
+      <span class="sep">/</span>
+      <span *ngIf="product?.category">{{ product!.category?.toUpperCase() }}</span>
+      <span class="sep" *ngIf="product?.category">/</span>
+      <span class="current" *ngIf="product">{{ product!.name.toUpperCase() }}</span>
+    </nav>
 
-        <div class="content">
-            <h1 class="name">{{ product.name }}</h1>
-            
-            <div class="price">
-                <span *ngIf="salePrice" class="price-sale">{{ salePrice | currency:'USD' }}</span>
-                <span *ngIf="salePrice" class="price-original">{{ product.price | currency:'USD' }}</span>
-                <span *ngIf="salePrice && discountPercent" class="price-percent">-{{ discountPercent }}%</span>
-                <span *ngIf="!salePrice">{{ product.price | currency:'USD' }}</span>
-            </div>
-
-            <div class="stock-status" 
-                 [class.hidden]="!stockStatusMessage"
-                 [class.sold-out]="isSoldOut"
-                 [class.sale-message]="!!salePrice && !isSoldOut"
-                 id="stockStatus">
-                {{ stockStatusMessage }}
-            </div>
-
-            <!-- Colors -->
-            <div class="colors" *ngIf="product.colors && product.colors.length > 0">
-                <div 
-                    *ngFor="let color of product.colors" 
-                    class="color-box"
-                    [class.active]="selectedColor === color"
-                    [attr.data-color]="color"
-                    (click)="selectColor(color)">
-                    {{ color }}
-                </div>
-            </div>
-
-            <!-- Size & Quantity -->
-            <div class="product-options">
-                <label for="sizeSelect" *ngIf="product.sizes && product.sizes.length > 0">Size:</label>
-                <select 
-                    id="sizeSelect" 
-                    [(ngModel)]="selectedSize"
-                    *ngIf="product.sizes && product.sizes.length > 0"
-                    [disabled]="isSoldOut">
-                    <option *ngFor="let size of product.sizes" [value]="size">{{ size }}</option>
-                </select>
-
-                <label for="quantity">Quantity:</label>
-                <input 
-                    type="number" 
-                    id="quantity" 
-                    [(ngModel)]="quantity"
-                    min="1"
-                    [disabled]="isSoldOut">
-            </div>
-
-            <!-- Description -->
-            <p class="description">{{ product.description || 'No additional description is available for this item.' }}</p>
-
-            <!-- Features -->
-            <ul class="features" *ngIf="product.details && product.details.length > 0">
-                <li *ngFor="let detail of product.details">{{ detail }}</li>
-            </ul>
-
-            <!-- Buttons -->
-            <div class="buttons">
-                <button 
-                    type="button" 
-                    class="btn primary" 
-                    [disabled]="isSoldOut"
-                    (click)="addToCart()">
-                    Add to cart
-                </button>
-                <button 
-                    type="button"
-                    class="btn ghost" 
-                    [disabled]="isSoldOut"
-                    (click)="buyNow($event)">
-                    Buy now
-                </button>
-            </div>
-        </div>
+    <!-- Loading -->
+    <div class="pd-loading" *ngIf="!product && !errorMessage">
+      <div class="loader"></div>
     </div>
 
-    <div class="title secondary" *ngIf="similarProducts.length > 0">You may also like</div>
-    <div class="listProduct similarList" *ngIf="similarProducts.length > 0">
-        <div class="similar-track">
-            <a 
-                *ngFor="let item of similarProducts" 
-                class="item"
-                [routerLink]="['/product-detail']"
-                [queryParams]="{id: item.id}"
-                [attr.aria-label]="item.name">
-                <div class="thumb">
-                    <img [src]="item.image" [alt]="item.name">
-                    <img *ngIf="item.hoverImage" [src]="item.hoverImage" [alt]="item.name" class="hover">
-                </div>
-                <h2>{{ item.name }}</h2>
-                <div class="price">
-                    <span *ngIf="getSalePrice(item)" class="price-sale">{{ getSalePrice(item) | currency:'USD' }}</span>
-                    <span *ngIf="getSalePrice(item)" class="price-original">{{ item.price | currency:'USD' }}</span>
-                    <span *ngIf="getSalePrice(item) && getDiscountPercent(item)" class="price-percent">
-                        -{{ getDiscountPercent(item) }}%
-                    </span>
-                    <span *ngIf="!getSalePrice(item)" class="price-regular">{{ item.price | currency:'USD' }}</span>
-                </div>
-            </a>
+    <!-- Error -->
+    <div class="pd-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <!-- Main grid -->
+    <div class="pd-grid" *ngIf="product">
+
+      <!-- LEFT: Image -->
+      <div class="pd-media">
+        <div class="pd-main-img">
+          <img [src]="mainImage" [alt]="product.name">
         </div>
+        <div class="pd-thumbs" *ngIf="gallerySources.length > 1">
+          <button class="pd-thumb" type="button"
+            *ngFor="let src of gallerySources"
+            [class.active]="mainImage === src"
+            (click)="selectImage(src)">
+            <img [src]="src" [alt]="product.name">
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Info -->
+      <div class="pd-info">
+        <div class="pd-cat">{{ product.category }}</div>
+        <h1 class="pd-name">{{ product.name }}</h1>
+
+        <div class="pd-price-row">
+          <span class="pd-price" [class.is-sale]="!!originalPrice">
+            {{ displayPrice | currency:'USD' }}
+          </span>
+          <span class="pd-orig" *ngIf="originalPrice">{{ originalPrice | currency:'USD' }}</span>
+          <span class="pd-pct" *ngIf="discountPct">-{{ discountPct }}%</span>
+        </div>
+
+        <div class="pd-soldout-msg" *ngIf="isSoldOut">SOLD OUT</div>
+
+        <div class="pd-divider"></div>
+
+        <!-- Sizes -->
+        <div class="pd-opt-row" *ngIf="product.sizes && product.sizes.length > 0">
+          <div class="pd-opt-label">SIZE</div>
+          <div class="pd-sizes">
+            <button class="pd-size-btn" type="button"
+              *ngFor="let s of product.sizes"
+              [class.active]="selectedSize === s"
+              [disabled]="isSoldOut"
+              (click)="selectedSize = s">{{ s }}</button>
+          </div>
+        </div>
+
+        <!-- Colors -->
+        <div class="pd-opt-row" *ngIf="product.colors && product.colors.length > 0">
+          <div class="pd-opt-label">COLOR</div>
+          <div class="pd-colors">
+            <button class="pd-color-btn" type="button"
+              *ngFor="let c of product.colors"
+              [class.active]="selectedColor === c"
+              [disabled]="isSoldOut"
+              (click)="selectedColor = c">{{ c }}</button>
+          </div>
+        </div>
+
+        <!-- Quantity -->
+        <div class="pd-opt-row">
+          <div class="pd-opt-label">QUANTITY</div>
+          <div class="pd-qty">
+            <button class="pd-qty-btn" type="button" [disabled]="isSoldOut" (click)="decreaseQty()">−</button>
+            <span class="pd-qty-val">{{ quantity }}</span>
+            <button class="pd-qty-btn" type="button" [disabled]="isSoldOut" (click)="quantity = quantity + 1">+</button>
+          </div>
+        </div>
+
+        <div class="pd-divider"></div>
+
+        <!-- CTAs -->
+        <div class="pd-ctas">
+          <button class="pd-btn-primary" type="button" [disabled]="isSoldOut" (click)="addToCart()">ADD TO CART</button>
+          <button class="pd-btn-secondary" type="button" [disabled]="isSoldOut" (click)="buyNow($event)">BUY NOW</button>
+        </div>
+
+        <!-- Description -->
+        <div class="pd-desc" *ngIf="product.description">
+          <div class="pd-opt-label">DESCRIPTION</div>
+          <p>{{ product.description }}</p>
+        </div>
+
+
+      </div>
     </div>
 
-    <div id="detailError" class="empty-state hidden" *ngIf="errorMessage">
-        {{ errorMessage }}
+    <!-- Similar Products -->
+    <div class="pd-similar" *ngIf="similarProducts.length > 0">
+      <div class="pd-similar-title">YOU MAY ALSO LIKE</div>
+      <div class="pd-similar-grid">
+        <div class="grid-cell" *ngFor="let sp of similarProducts">
+          <app-product-card
+            [product]="toCardProduct(sp)"
+            [detailUrl]="'/product-detail?id=' + sp._id">
+          </app-product-card>
+        </div>
+      </div>
     </div>
+
+  </div>
 </div>
 
 <app-footer></app-footer>

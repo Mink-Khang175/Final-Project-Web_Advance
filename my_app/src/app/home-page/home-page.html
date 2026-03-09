@@ -19,16 +19,21 @@
 </section>
 
 <section class="services stack-card" id="services">
-  <h2>New Arrivals</h2>
-  <p>Explore your vibe.</p>
-  <div class="cards">
-    <app-product-card 
-      *ngFor="let product of newArrivals"
-      [product]="product"
-      [detailUrl]="getProductDetailUrl(product)"
-      (buyNow)="handleBuyNow($event)"
-      (addToCart)="handleAddToCart($event)">
-    </app-product-card>
+  <div class="new-arrivals-poster">
+    <img src="/assets/images/New Arrivals/poster.png" alt="New Arrivals">
+    <a class="poster-btn btn-glass poster-btn--topleft"
+       href="https://heyzine.com/flip-book/ffeef366b4.html"
+       target="_blank" rel="noopener noreferrer"
+       (mousemove)="onMagneticMove($event)"
+       (mouseenter)="onMagneticEnter($event)"
+       (mouseleave)="onMagneticLeave($event)">VISIT LOOKBOOK</a>
+    <a class="poster-btn btn-solid poster-btn--bottomright" routerLink="/product-list"
+       (mousemove)="onMagneticMove($event)"
+       (mouseenter)="onMagneticEnter($event)"
+       (mouseleave)="onMagneticLeave($event)">
+      <span class="text">ALL PRODUCTS</span>
+      <span class="arrow">→</span>
+    </a>
   </div>
 </section>
 

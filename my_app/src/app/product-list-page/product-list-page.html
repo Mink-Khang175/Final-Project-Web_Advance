@@ -1,1 +1,81 @@
-<p>product-list-page works!</p>
+<app-header></app-header>
+
+<div class="pl-page">
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-item" [class.active]="openFilter === 'category'" (click)="toggleFilter('category', $event)">
+      <span class="filter-label">CATEGORY</span>
+      <span class="filter-chevron">&#8964;</span>
+      <div class="filter-dropdown" *ngIf="openFilter === 'category'">
+        <div class="dropdown-option" [class.selected]="!selectedCategory" (click)="setCategory(null, $event)">All</div>
+        <div class="dropdown-option" *ngFor="let cat of categories"
+             [class.selected]="selectedCategory === cat"
+             (click)="setCategory(cat, $event)">{{ cat }}</div>
+      </div>
+    </div>
+
+    <div class="filter-item" [class.active]="openFilter === 'size'" (click)="toggleFilter('size', $event)">
+      <span class="filter-label">SIZE</span>
+      <span class="filter-chevron">&#8964;</span>
+      <div class="filter-dropdown" *ngIf="openFilter === 'size'">
+        <div class="dropdown-option" [class.selected]="!selectedSize" (click)="setSize(null, $event)">All</div>
+        <div class="dropdown-option" *ngFor="let s of sizes"
+             [class.selected]="selectedSize === s"
+             (click)="setSize(s, $event)">{{ s }}</div>
+      </div>
+    </div>
+
+    <div class="filter-item" [class.active]="openFilter === 'color'" (click)="toggleFilter('color', $event)">
+      <span class="filter-label">COLOR</span>
+      <span class="filter-chevron">&#8964;</span>
+      <div class="filter-dropdown" *ngIf="openFilter === 'color'">
+        <div class="dropdown-option" [class.selected]="!selectedColor" (click)="setColor(null, $event)">All</div>
+        <div class="dropdown-option" *ngFor="let c of colors"
+             [class.selected]="selectedColor === c"
+             (click)="setColor(c, $event)">{{ c }}</div>
+      </div>
+    </div>
+
+    <div class="filter-item" [class.active]="openFilter === 'price'" (click)="toggleFilter('price', $event)">
+      <span class="filter-label">PRICE</span>
+      <span class="filter-chevron">&#8964;</span>
+      <div class="filter-dropdown" *ngIf="openFilter === 'price'">
+        <div class="dropdown-option" [class.selected]="priceSort === ''" (click)="setPriceSort('', $event)">Default</div>
+        <div class="dropdown-option" [class.selected]="priceSort === 'asc'" (click)="setPriceSort('asc', $event)">Low to High</div>
+        <div class="dropdown-option" [class.selected]="priceSort === 'desc'" (click)="setPriceSort('desc', $event)">High to Low</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Count -->
+  <div class="pl-meta">
+    <span>{{ filteredProducts.length }} ITEMS</span>
+    <span *ngIf="selectedCategory || selectedSize || selectedColor || priceSort" class="clear-btn" (click)="clearFilters()">CLEAR FILTERS &#xd7;</span>
+  </div>
+
+  <!-- Product Grid -->
+  <div class="product-grid" *ngIf="filteredProducts.length > 0">
+    <div class="grid-cell" *ngFor="let product of filteredProducts">
+      <app-product-card
+        [product]="product"
+        [detailUrl]="'/product-detail?id=' + product.id"
+        (buyNow)="handleBuyNow($event)"
+        (addToCart)="handleAddToCart($event)">
+      </app-product-card>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="filteredProducts.length === 0 && !isLoading">
+    <p class="empty-title">NO PRODUCTS FOUND</p>
+    <p class="empty-sub">{{ selectedCategory || selectedSize || selectedColor ? 'Try adjusting your filters.' : 'Products will appear here once added to the store.' }}</p>
+    <button class="empty-btn" (click)="clearFilters()" *ngIf="selectedCategory || selectedSize || selectedColor">CLEAR FILTERS</button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loader"></div>
+  </div>
+
+</div>

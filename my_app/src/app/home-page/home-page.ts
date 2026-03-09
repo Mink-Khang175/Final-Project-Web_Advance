@@ -1,15 +1,25 @@
 ﻿import { Component, OnInit, OnDestroy, AfterViewInit, Inject, PLATFORM_ID, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Header } from '../header/header';
 import { Footer } from '../footer/footer';
-import { ProductCard, Product } from '../product-card/product-card';
 import { ApiService } from '../api.service';
+
+interface HomeProduct {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  sale?: number;
+  salePercent?: number;
+  soldOut?: boolean;
+  category?: string;
+}
 
 @Component({
   selector: 'app-home-page',
-  imports: [CommonModule, FormsModule, Header, Footer, ProductCard],
+  imports: [CommonModule, FormsModule, RouterLink, Header, Footer],
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',
 })
@@ -45,7 +55,7 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
   private typewriterInterval: any;
   private typewriterTimeout: any;
 
-  newArrivals: Product[] = [];
+  newArrivals: HomeProduct[] = [];
 
   @ViewChild('stackContainer', { static: false }) stackContainer!: ElementRef;
   private stackScrollHandler: (() => void) | null = null;
@@ -342,15 +352,15 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  getProductDetailUrl(product: Product): string {
+  getProductDetailUrl(product: HomeProduct): string {
     return `/product-detail?id=${encodeURIComponent(product.id)}`;
   }
 
-  handleBuyNow(product: Product): void {
+  handleBuyNow(product: HomeProduct): void {
     this.router.navigate(['/product-detail'], { queryParams: { id: product.id } });
   }
 
-  handleAddToCart(product: Product): void {
+  handleAddToCart(product: HomeProduct): void {
     const user = localStorage.getItem('loggedInUser');
     if (!user) {
       this.router.navigate(['/auth']);
@@ -367,5 +377,28 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
       next: () => alert(`${product.name} added to cart!`),
       error: () => alert(`${product.name} added to cart! (offline)`)
     });
+  }
+
+  /* ============================================
+     MAGNETIC BUTTON EFFECT
+     ============================================ */
+  onMagneticMove(event: MouseEvent): void {
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    const x = event.clientX - rect.left - rect.width / 2;
+    const y = event.clientY - rect.top - rect.height / 2;
+    btn.style.transition = 'none';
+    btn.style.transform = `translate(${x * 0.3}px, ${y * 0.5}px)`;
+  }
+
+  onMagneticEnter(event: MouseEvent): void {
+    const btn = event.currentTarget as HTMLElement;
+    btn.style.transition = 'none';
+  }
+
+  onMagneticLeave(event: MouseEvent): void {
+    const btn = event.currentTarget as HTMLElement;
+    btn.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+    btn.style.transform = 'translate(0px, 0px)';
   }
 }

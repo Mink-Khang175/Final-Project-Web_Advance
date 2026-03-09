@@ -6,6 +6,8 @@ import { Auth } from './auth/auth';   // Import Auth component
 import { Profile } from './profile/profile';   // Import Profile component
 import { ProductDetail } from './product-detail/product-detail';   // Import ProductDetail component
 import { CartPage } from './cart-page/cart-page';   // Import CartPage component
+import { ProductListPage } from './product-list-page/product-list-page';   // Import ProductListPage component
+import { AdminPage } from './admin-page/admin-page';   // Import AdminPage component
 
 export const routes: Routes = [
   { path: '', redirectTo: 'intro', pathMatch: 'full' }, // Mặc định vào Intro
@@ -16,4 +18,6 @@ export const routes: Routes = [
   { path: 'profile', component: Profile },         // Định nghĩa trang Profile
   { path: 'product-detail', component: ProductDetail }, // Định nghĩa trang Product Detail
   { path: 'cart', component: CartPage },         // Định nghĩa trang Cart
+  { path: 'product-list', component: ProductListPage }, // Định nghĩa trang Product List
+  { path: 'admin', component: AdminPage },              // Định nghĩa trang Admin
 ];
