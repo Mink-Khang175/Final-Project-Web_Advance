@@ -63,4 +63,9 @@ export class ProductCard {
   get hasDiscount(): boolean {
     return !!this.product.sale && this.product.sale < this.product.price;
   }
+
+  resolveImg(path: string | undefined): string {
+    if (!path) return '';
+    return path.startsWith('/assets/') ? path : '/assets/' + path;
+  }
 }
