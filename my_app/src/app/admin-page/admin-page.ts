@@ -12,7 +12,7 @@ import { ApiService } from '../api.service';
   styleUrl: './admin-page.css',
 })
 export class AdminPage implements OnInit {
-  activeTab: 'products' | 'orders' | 'users' = 'products';
+  activeTab: 'dashboard' | 'products' | 'orders' | 'users' | 'sales' | 'inventory' = 'dashboard';
 
   // ---- Products ----
   products: any[] = [];
@@ -38,6 +38,15 @@ export class AdminPage implements OnInit {
   users: any[] = [];
   usersLoading = false;
 
+  // ---- Sales Report ----
+  salesPeriod: 'week' | 'month' | 'year' = 'month';
+
+  // ---- Inventory ----
+  inventoryFilter: 'all' | 'low' | 'out' = 'all';
+  inventorySearch = '';
+  editingStockId: string | null = null;
+  editingStockValue = 0;
+
   constructor(
     private api: ApiService,
     private router: Router,
@@ -46,7 +55,25 @@ export class AdminPage implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadProducts();
+    this._loadAll();
+  }
+
+  private _loadAll(): void {
+    this.productLoading = true;
+    this.ordersLoading = true;
+    this.usersLoading = true;
+    this.api.getProducts().subscribe({
+      next: (data) => { this.products = data; this.productLoading = false; this.cdr.detectChanges(); },
+      error: () => { this.productLoading = false; this.cdr.detectChanges(); }
+    });
+    this.api.getOrders().subscribe({
+      next: (data) => { this.orders = data; this.ordersLoading = false; this.cdr.detectChanges(); },
+      error: () => { this.ordersLoading = false; this.cdr.detectChanges(); }
+    });
+    this.api.getUsers().subscribe({
+      next: (data) => { this.users = data; this.usersLoading = false; this.cdr.detectChanges(); },
+      error: () => { this.usersLoading = false; this.cdr.detectChanges(); }
+    });
   }
 
   // ============ Products ============
@@ -147,29 +174,9 @@ export class AdminPage implements OnInit {
     });
   }
 
-  // ============ Orders ============
-  loadOrders(): void {
-    this.ordersLoading = true;
-    this.api.getOrders().subscribe({
-      next: (data) => { this.orders = data; this.ordersLoading = false; },
-      error: () => { this.ordersLoading = false; }
-    });
-  }
-
-  // ============ Users ============
-  loadUsers(): void {
-    this.usersLoading = true;
-    this.api.getUsers().subscribe({
-      next: (data) => { this.users = data; this.usersLoading = false; },
-      error: () => { this.usersLoading = false; }
-    });
-  }
-
   // ============ Tabs ============
-  setTab(tab: 'products' | 'orders' | 'users'): void {
+  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'sales' | 'inventory'): void {
     this.activeTab = tab;
-    if (tab === 'orders' && !this.orders.length) this.loadOrders();
-    if (tab === 'users' && !this.users.length) this.loadUsers();
   }
 
   private emptyForm() {
@@ -183,5 +190,158 @@ export class AdminPage implements OnInit {
   getStatusClass(status: string): string {
     const map: any = { pending: 'status-pending', processing: 'status-processing', completed: 'status-completed', cancelled: 'status-cancelled' };
     return map[status] || '';
+  }
+
+  // ============ Dashboard KPIs ============
+  get dashboardLoading(): boolean {
+    return this.productLoading || this.ordersLoading || this.usersLoading;
+  }
+
+  get totalRevenue(): number {
+    return this.orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.totalAmount || 0), 0);
+  }
+
+  get avgOrderValue(): number {
+    const valid = this.orders.filter(o => o.status !== 'cancelled');
+    return valid.length ? this.totalRevenue / valid.length : 0;
+  }
+
+  get revenueByMonth(): { label: string; total: number; barPct: number }[] {
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const label = d.toLocaleString('en-US', { month: 'short' });
+      const total = this.orders
+        .filter(o => o.status !== 'cancelled' && o.createdAt)
+        .filter(o => { const od = new Date(o.createdAt); return od.getFullYear() === d.getFullYear() && od.getMonth() === d.getMonth(); })
+        .reduce((s, o) => s + (o.totalAmount || 0), 0);
+      return { label, total };
+    });
+    const max = Math.max(1, ...months.map(m => m.total));
+    return months.map(m => ({ ...m, barPct: Math.round((m.total / max) * 100) }));
+  }
+
+  get orderStatusDist(): { status: string; count: number; pct: number; cls: string }[] {
+    const map: Record<string, number> = {};
+    this.orders.forEach(o => { const s = o.status || 'unknown'; map[s] = (map[s] || 0) + 1; });
+    const total = this.orders.length || 1;
+    const clsMap: Record<string, string> = { pending: 'status-pending', processing: 'status-processing', completed: 'status-completed', cancelled: 'status-cancelled' };
+    return Object.entries(map)
+      .map(([status, count]) => ({ status, count, pct: Math.round((count / total) * 100), cls: clsMap[status] || '' }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  get topProducts(): { name: string; revenue: number; count: number }[] {
+    const map: Record<string, { revenue: number; count: number }> = {};
+    this.orders.filter(o => o.status !== 'cancelled').forEach(o => {
+      (o.items || []).forEach((item: any) => {
+        const name = item.productName || item.name || 'Unknown';
+        if (!map[name]) map[name] = { revenue: 0, count: 0 };
+        map[name].revenue += (item.price || 0) * (item.quantity || 1);
+        map[name].count += item.quantity || 1;
+      });
+    });
+    return Object.entries(map).map(([name, d]) => ({ name, ...d })).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  }
+
+  // ============ Sales Report ============
+  get salesRows(): { label: string; orders: number; revenue: number }[] {
+    const now = new Date();
+    if (this.salesPeriod === 'week') {
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(now); d.setDate(now.getDate() - (6 - i));
+        const label = d.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const dayOrders = this.orders.filter(o => o.createdAt && new Date(o.createdAt).toDateString() === d.toDateString());
+        return { label, orders: dayOrders.length, revenue: dayOrders.reduce((s, o) => s + (o.totalAmount || 0), 0) };
+      });
+    }
+    if (this.salesPeriod === 'year') {
+      return Array.from({ length: 3 }, (_, i) => {
+        const year = now.getFullYear() - (2 - i);
+        const yearOrders = this.orders.filter(o => o.createdAt && new Date(o.createdAt).getFullYear() === year);
+        return { label: year.toString(), orders: yearOrders.length, revenue: yearOrders.reduce((s, o) => s + (o.totalAmount || 0), 0) };
+      });
+    }
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const label = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      const monthOrders = this.orders.filter(o => {
+        if (!o.createdAt) return false;
+        const od = new Date(o.createdAt);
+        return od.getFullYear() === d.getFullYear() && od.getMonth() === d.getMonth();
+      });
+      return { label, orders: monthOrders.length, revenue: monthOrders.reduce((s, o) => s + (o.totalAmount || 0), 0) };
+    });
+  }
+
+  get salesChartRows(): { label: string; orders: number; revenue: number; barPct: number }[] {
+    const rows = this.salesRows;
+    const max = Math.max(1, ...rows.map(r => r.revenue));
+    return rows.map(r => ({ ...r, barPct: Math.round((r.revenue / max) * 100) }));
+  }
+
+  get salesTotal(): { orders: number; revenue: number } {
+    return this.salesRows.reduce((acc, r) => ({ orders: acc.orders + r.orders, revenue: acc.revenue + r.revenue }), { orders: 0, revenue: 0 });
+  }
+
+  // ============ Inventory ============
+  get filteredInventory(): any[] {
+    let result = [...this.products];
+    if (this.inventoryFilter === 'low') result = result.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 10);
+    else if (this.inventoryFilter === 'out') result = result.filter(p => (p.stock ?? 0) === 0);
+    if (this.inventorySearch.trim()) {
+      const q = this.inventorySearch.toLowerCase();
+      result = result.filter(p => p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q));
+    }
+    return result.sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0));
+  }
+
+  get lowStockCount(): number { return this.products.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 10).length; }
+  get outOfStockCount(): number { return this.products.filter(p => (p.stock ?? 0) === 0).length; }
+
+  startEditStock(p: any): void { this.editingStockId = p._id; this.editingStockValue = p.stock ?? 0; }
+
+  saveStock(p: any): void {
+    this.api.updateProduct(p._id, { ...p, stock: this.editingStockValue }).subscribe({
+      next: () => { p.stock = this.editingStockValue; this.editingStockId = null; this.cdr.detectChanges(); },
+      error: () => alert('Failed to update stock')
+    });
+  }
+
+  cancelEditStock(): void { this.editingStockId = null; }
+
+  // ============ CSV Export ============
+  exportOrdersCsv(): void {
+    const headers = ['Order ID', 'User', 'Total ($)', 'Status', 'Date'];
+    const rows = this.orders.map(o => [
+      o._id, o.userId?.name || o.userId || '', (o.totalAmount || 0).toFixed(2), o.status || '', (o.createdAt || '').split('T')[0]
+    ]);
+    this._downloadCsv('orders.csv', [headers, ...rows]);
+  }
+
+  exportProductsCsv(): void {
+    const headers = ['Name', 'Category', 'Price', 'Original Price', 'Discount %', 'Stock', 'Status'];
+    const rows = this.products.map(p => [
+      p.name, p.category || '', String(p.price || 0), String(p.originalPrice || ''),
+      String(p.discount || ''), String(p.stock ?? 0),
+      (p.stock ?? 0) === 0 ? 'Out of Stock' : (p.stock ?? 0) <= 10 ? 'Low Stock' : 'In Stock'
+    ]);
+    this._downloadCsv('products.csv', [headers, ...rows]);
+  }
+
+  exportSalesCsv(): void {
+    const headers = ['Period', 'Orders', 'Revenue ($)'];
+    const rows = this.salesRows.map(r => [r.label, String(r.orders), r.revenue.toFixed(2)]);
+    this._downloadCsv(`sales-${this.salesPeriod}.csv`, [headers, ...rows]);
+  }
+
+  private _downloadCsv(filename: string, rows: string[][]): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 }

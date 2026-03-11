@@ -9,9 +9,12 @@
       <span class="filter-chevron">&#8964;</span>
       <div class="filter-dropdown" *ngIf="openFilter === 'category'">
         <div class="dropdown-option" [class.selected]="!selectedCategory" (click)="setCategory(null, $event)">All</div>
-        <div class="dropdown-option" *ngFor="let cat of categories"
+        <div class="dropdown-option" *ngFor="let cat of categories | slice:0:(categoriesExpanded ? categories.length : COLLAPSED_LIMIT)"
              [class.selected]="selectedCategory === cat"
              (click)="setCategory(cat, $event)">{{ cat }}</div>
+        <div class="dropdown-toggle" *ngIf="categories.length > COLLAPSED_LIMIT" (click)="toggleCategoriesExpanded($event)">
+          {{ categoriesExpanded ? '&#8722; LESS' : '&#43; MORE (' + (categories.length - COLLAPSED_LIMIT) + ')' }}
+        </div>
       </div>
     </div>
 
@@ -31,9 +34,12 @@
       <span class="filter-chevron">&#8964;</span>
       <div class="filter-dropdown" *ngIf="openFilter === 'color'">
         <div class="dropdown-option" [class.selected]="!selectedColor" (click)="setColor(null, $event)">All</div>
-        <div class="dropdown-option" *ngFor="let c of colors"
+        <div class="dropdown-option" *ngFor="let c of colors | slice:0:(colorsExpanded ? colors.length : COLLAPSED_LIMIT)"
              [class.selected]="selectedColor === c"
              (click)="setColor(c, $event)">{{ c }}</div>
+        <div class="dropdown-toggle" *ngIf="colors.length > COLLAPSED_LIMIT" (click)="toggleColorsExpanded($event)">
+          {{ colorsExpanded ? '&#8722; LESS COLORS' : '&#43; MORE COLORS (' + (colors.length - COLLAPSED_LIMIT) + ')' }}
+        </div>
       </div>
     </div>
 
@@ -50,8 +56,8 @@
 
   <!-- Product Count -->
   <div class="pl-meta">
-    <span>{{ filteredProducts.length }} ITEMS</span>
-    <span *ngIf="selectedCategory || selectedSize || selectedColor || priceSort" class="clear-btn" (click)="clearFilters()">CLEAR FILTERS &#xd7;</span>
+    <span>{{ filteredProducts.length }} ITEMS<ng-container *ngIf="searchQuery"> for &ldquo;{{ searchQuery }}&rdquo;</ng-container></span>
+    <span *ngIf="selectedCategory || selectedSize || selectedColor || priceSort || searchQuery" class="clear-btn" (click)="clearFilters()">CLEAR FILTERS &#xd7;</span>
   </div>
 
   <!-- Product Grid -->
@@ -69,8 +75,8 @@
   <!-- Empty State -->
   <div class="empty-state" *ngIf="filteredProducts.length === 0 && !isLoading">
     <p class="empty-title">NO PRODUCTS FOUND</p>
-    <p class="empty-sub">{{ selectedCategory || selectedSize || selectedColor ? 'Try adjusting your filters.' : 'Products will appear here once added to the store.' }}</p>
-    <button class="empty-btn" (click)="clearFilters()" *ngIf="selectedCategory || selectedSize || selectedColor">CLEAR FILTERS</button>
+    <p class="empty-sub">{{ searchQuery ? ('No results for &ldquo;' + searchQuery + '&rdquo;. Try a different keyword.') : (selectedCategory || selectedSize || selectedColor ? 'Try adjusting your filters.' : 'Products will appear here once added to the store.') }}</p>
+    <button class="empty-btn" (click)="clearFilters()" *ngIf="selectedCategory || selectedSize || selectedColor || searchQuery">CLEAR FILTERS</button>
   </div>
 
   <!-- Loading -->

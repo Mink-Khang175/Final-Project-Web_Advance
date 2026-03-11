@@ -1,5 +1,5 @@
 ﻿import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule, isPlatformBrowser, SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { ApiService, CartItem } from '../api.service';
@@ -7,7 +7,7 @@ import { ApiService, CartItem } from '../api.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, SlicePipe],
   templateUrl: './header.html',
   styleUrl: './header.css',
 })
@@ -19,6 +19,12 @@ export class Header implements OnInit, OnDestroy {
   isHomePage = false;
   activeSection = 'home';
 
+  // Search suggestions
+  searchSuggestions: any[] = [];
+  showSuggestions = false;
+  private allProducts: any[] = [];
+  private productsLoaded = false;
+
   // Cart dropdown
   cartOpen = false;
   cartItems: CartItem[] = [];
@@ -28,6 +34,7 @@ export class Header implements OnInit, OnDestroy {
   private userId = '';
   private cartEventListener: (() => void) | null = null;
 
+  private searchDebounce: any = null;
   private sectionObserver: IntersectionObserver | null = null;
   private observedElements: Element[] = [];
   private scrollContainer: Element | null = null;
@@ -81,6 +88,7 @@ export class Header implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       this.checkLoginStatus();
       this.loadCart();
+      this.loadAllProducts();
       // Listen for cart update events dispatched by other components
       this.cartEventListener = () => this.loadCart();
       window.addEventListener('cart-updated', this.cartEventListener);
@@ -98,6 +106,7 @@ export class Header implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroySectionObserver();
     if (this.cartHoverTimeout) clearTimeout(this.cartHoverTimeout);
+    if (this.searchDebounce) clearTimeout(this.searchDebounce);
     if (this.cartEventListener) window.removeEventListener('cart-updated', this.cartEventListener);
   }
 
@@ -217,6 +226,8 @@ export class Header implements OnInit, OnDestroy {
     event.preventDefault();
     if (this.isHomePage) {
       this.scrollToSection(sectionId);
+    } else if (sectionId === 'portfolio') {
+      this.router.navigate(['/news']);
     } else {
       this.router.navigate(['/home'], { fragment: sectionId });
     }
@@ -333,7 +344,10 @@ export class Header implements OnInit, OnDestroy {
   toggleSearch(event: Event): void {
     event.preventDefault();
     this.searchActive = !this.searchActive;
-    if (this.searchActive) {
+    if (!this.searchActive) {
+      this.showSuggestions = false;
+      this.searchSuggestions = [];
+    } else {
       setTimeout(() => {
         const input = document.querySelector('.search-container .search-input') as HTMLInputElement;
         if (input) input.focus();
@@ -342,15 +356,65 @@ export class Header implements OnInit, OnDestroy {
   }
 
   onSearchBlur(): void {
-    if (!this.searchQuery.trim()) {
-      setTimeout(() => {
+    // Delay so mousedown on suggestion fires before we hide
+    setTimeout(() => {
+      this.showSuggestions = false;
+      if (!this.searchQuery.trim()) {
         this.searchActive = false;
-      }, 200);
-    }
+        this.searchSuggestions = [];
+      }
+      this.cdr.detectChanges();
+    }, 200);
   }
 
   onSearchInput(): void {
-    console.log('Searching for:', this.searchQuery);
+    clearTimeout(this.searchDebounce);
+    const q = this.searchQuery.trim().toLowerCase();
+    if (!q) {
+      this.searchSuggestions = [];
+      this.showSuggestions = false;
+    } else {
+      this.searchSuggestions = this.allProducts
+        .filter(p => p.name?.toLowerCase().includes(q))
+        .slice(0, 6);
+      this.showSuggestions = this.searchSuggestions.length > 0;
+    }
+    this.searchDebounce = setTimeout(() => {
+      const urlPath = this.router.url.split('?')[0];
+      if (urlPath === '/product-list') {
+        this.router.navigate(['/product-list'], {
+          queryParams: q ? { search: q } : { search: null },
+          queryParamsHandling: 'merge'
+        });
+      }
+    }, 350);
+  }
+
+  onSearchEnter(): void {
+    clearTimeout(this.searchDebounce);
+    const q = this.searchQuery.trim();
+    if (!q) return;
+    this.showSuggestions = false;
+    this.searchActive = false;
+    this.router.navigate(['/product-list'], { queryParams: { search: q } });
+  }
+
+  selectSuggestion(product: any): void {
+    this.showSuggestions = false;
+    this.searchActive = false;
+    this.searchQuery = '';
+    this.router.navigate(['/product-detail'], { queryParams: { id: product._id } });
+  }
+
+  loadAllProducts(): void {
+    if (this.productsLoaded) return;
+    this.api.getProducts().subscribe({
+      next: (products) => {
+        this.allProducts = products;
+        this.productsLoaded = true;
+      },
+      error: () => {}
+    });
   }
 
   closeMenu(): void {

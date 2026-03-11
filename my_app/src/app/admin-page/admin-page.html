@@ -7,6 +7,9 @@
       ADMIN
     </div>
     <nav class="sidebar-nav">
+      <button [class.active]="activeTab === 'dashboard'" (click)="setTab('dashboard')">
+        <span class="nav-icon">&#9632;</span> Dashboard
+      </button>
       <button [class.active]="activeTab === 'products'" (click)="setTab('products')">
         <span class="nav-icon">&#9632;</span> Products
       </button>
@@ -16,6 +19,13 @@
       <button [class.active]="activeTab === 'users'" (click)="setTab('users')">
         <span class="nav-icon">&#9632;</span> Users
       </button>
+      <div class="sidebar-divider"></div>
+      <button [class.active]="activeTab === 'sales'" (click)="setTab('sales')">
+        <span class="nav-icon">&#9632;</span> Sales Report
+      </button>
+      <button [class.active]="activeTab === 'inventory'" (click)="setTab('inventory')">
+        <span class="nav-icon">&#9632;</span> Inventory
+      </button>
     </nav>
     <div class="sidebar-footer">
       <a href="/home">&#8592; Back to site</a>
@@ -24,6 +34,111 @@
 
   <!-- Main -->
   <main class="admin-main">
+
+    <!-- ===== DASHBOARD TAB ===== -->
+    <div *ngIf="activeTab === 'dashboard'">
+      <div class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Store performance overview</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-secondary" (click)="exportOrdersCsv()">&#11015; Export Orders CSV</button>
+          <button class="btn-secondary" (click)="exportProductsCsv()">&#11015; Export Products CSV</button>
+        </div>
+      </div>
+
+      <div class="loader-wrap" *ngIf="dashboardLoading"><div class="loader"></div></div>
+
+      <ng-container *ngIf="!dashboardLoading">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-revenue">$</div>
+            <div class="kpi-body">
+              <div class="kpi-label">Total Revenue</div>
+              <div class="kpi-value">{{ totalRevenue | number:'1.0-0' }} ₫</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-orders">#</div>
+            <div class="kpi-body">
+              <div class="kpi-label">Total Orders</div>
+              <div class="kpi-value">{{ orders.length | number }}</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-users">U</div>
+            <div class="kpi-body">
+              <div class="kpi-label">Registered Users</div>
+              <div class="kpi-value">{{ users.length | number }}</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-avg">~</div>
+            <div class="kpi-body">
+              <div class="kpi-label">Avg. Order Value</div>
+              <div class="kpi-value">{{ avgOrderValue | number:'1.0-0' }} ₫</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row: Revenue Chart + Order Status -->
+        <div class="dashboard-row">
+          <!-- Revenue Bar Chart -->
+          <div class="dash-card dash-chart">
+            <div class="dash-card-title">Revenue — Last 6 Months</div>
+            <div class="bar-chart">
+              <div class="bar-col" *ngFor="let m of revenueByMonth">
+                <div class="bar-track">
+                  <div class="bar-fill" [style.height.%]="m.barPct"
+                       [title]="(m.total | number) + ' ₫'"></div>
+                </div>
+                <div class="bar-label">{{ m.label }}</div>
+              </div>
+            </div>
+            <div class="empty-row" *ngIf="orders.length === 0">No order data yet.</div>
+          </div>
+
+          <!-- Order Status Distribution -->
+          <div class="dash-card">
+            <div class="dash-card-title">Order Status</div>
+            <div class="status-dist" *ngFor="let s of orderStatusDist">
+              <div class="status-dist-head">
+                <span class="status-badge" [ngClass]="s.cls">{{ s.status }}</span>
+                <span class="status-dist-val">{{ s.count }} ({{ s.pct }}%)</span>
+              </div>
+              <div class="dist-bar-track">
+                <div class="dist-bar-fill" [style.width.%]="s.pct" [ngClass]="s.cls"></div>
+              </div>
+            </div>
+            <div class="empty-row" *ngIf="orderStatusDist.length === 0">No orders yet.</div>
+          </div>
+        </div>
+
+        <!-- Top Products -->
+        <div class="dash-card" *ngIf="topProducts.length > 0">
+          <div class="dash-card-title">Top 5 Products by Revenue</div>
+          <div class="table-wrap" style="margin-top:12px;">
+            <table class="admin-table">
+              <thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let p of topProducts; let i = index">
+                  <td><span class="rank-badge">{{ i + 1 }}</span></td>
+                  <td>{{ p.name }}</td>
+                  <td>{{ p.count }}</td>
+                  <td>{{ p.revenue | number:'1.0-0' }} ₫</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="dash-card" *ngIf="topProducts.length === 0">
+          <div class="dash-card-title">Top Products</div>
+          <p class="empty-row">No completed orders with item data available yet.</p>
+        </div>
+      </ng-container>
+    </div>
 
     <!-- ===== PRODUCTS TAB ===== -->
     <div *ngIf="activeTab === 'products'">
@@ -162,6 +277,176 @@
             </tr>
             <tr *ngIf="users.length === 0">
               <td colspan="5" class="empty-row">No users found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== SALES REPORT TAB ===== -->
+    <div *ngIf="activeTab === 'sales'">
+      <div class="page-header">
+        <div>
+          <h1>Sales Report</h1>
+          <p>Revenue breakdown by period</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-secondary" (click)="exportSalesCsv()">&#11015; Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Period filter -->
+      <div class="period-tabs">
+        <button [class.active]="salesPeriod === 'week'" (click)="salesPeriod = 'week'">Last 7 Days</button>
+        <button [class.active]="salesPeriod === 'month'" (click)="salesPeriod = 'month'">Last 6 Months</button>
+        <button [class.active]="salesPeriod === 'year'" (click)="salesPeriod = 'year'">By Year</button>
+      </div>
+
+      <!-- Summary KPIs -->
+      <div class="kpi-grid" style="margin-bottom:24px;">
+        <div class="kpi-card">
+          <div class="kpi-icon kpi-orders">#</div>
+          <div class="kpi-body">
+            <div class="kpi-label">Orders in Period</div>
+            <div class="kpi-value">{{ salesTotal.orders }}</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon kpi-revenue">$</div>
+          <div class="kpi-body">
+            <div class="kpi-label">Revenue in Period</div>
+            <div class="kpi-value">{{ salesTotal.revenue | number:'1.0-0' }} ₫</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bar Chart -->
+      <div class="dash-card" style="margin-bottom:24px;">
+        <div class="dash-card-title">Revenue Chart</div>
+        <div class="bar-chart bar-chart-lg">
+          <div class="bar-col" *ngFor="let r of salesChartRows">
+            <div class="bar-track">
+              <div class="bar-fill" [style.height.%]="r.barPct"
+                   [title]="(r.revenue | number) + ' ₫'"></div>
+            </div>
+            <div class="bar-label">{{ r.label }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Orders</th>
+              <th>Revenue</th>
+              <th>Avg. Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of salesRows">
+              <td>{{ r.label }}</td>
+              <td>{{ r.orders }}</td>
+              <td>{{ r.revenue | number:'1.0-0' }} ₫</td>
+              <td>{{ r.orders > 0 ? ((r.revenue / r.orders) | number:'1.0-0') : 0 }} ₫</td>
+            </tr>
+            <tr class="totals-row">
+              <td><strong>TOTAL</strong></td>
+              <td><strong>{{ salesTotal.orders }}</strong></td>
+              <td><strong>{{ salesTotal.revenue | number:'1.0-0' }} ₫</strong></td>
+              <td><strong>{{ salesTotal.orders > 0 ? ((salesTotal.revenue / salesTotal.orders) | number:'1.0-0') : 0 }} ₫</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== INVENTORY TAB ===== -->
+    <div *ngIf="activeTab === 'inventory'">
+      <div class="page-header">
+        <div>
+          <h1>Inventory</h1>
+          <p>
+            {{ products.length }} products &nbsp;&middot;&nbsp;
+            <span class="text-warn">{{ lowStockCount }} low stock</span>
+            &nbsp;&middot;&nbsp;
+            <span class="text-danger">{{ outOfStockCount }} out of stock</span>
+          </p>
+        </div>
+        <div class="header-actions">
+          <input class="search-input" type="text" placeholder="Search products..."
+                 [(ngModel)]="inventorySearch">
+          <button class="btn-secondary" (click)="exportProductsCsv()">&#11015; Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Stock filter -->
+      <div class="period-tabs" style="margin-bottom:20px;">
+        <button [class.active]="inventoryFilter === 'all'" (click)="inventoryFilter = 'all'">
+          All ({{ products.length }})
+        </button>
+        <button [class.active]="inventoryFilter === 'low'" (click)="inventoryFilter = 'low'">
+          Low Stock ({{ lowStockCount }})
+        </button>
+        <button [class.active]="inventoryFilter === 'out'" (click)="inventoryFilter = 'out'">
+          Out of Stock ({{ outOfStockCount }})
+        </button>
+      </div>
+
+      <div class="loader-wrap" *ngIf="productLoading"><div class="loader"></div></div>
+
+      <div class="table-wrap" *ngIf="!productLoading">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of filteredInventory">
+              <td>
+                <div class="product-name-cell">
+                  <img *ngIf="p.image" [src]="p.image" class="product-thumb">
+                  <span class="product-name">{{ p.name }}</span>
+                </div>
+              </td>
+              <td>{{ p.category }}</td>
+              <td>${{ p.price }}</td>
+              <td>
+                <ng-container *ngIf="editingStockId !== p._id">
+                  <span [class.stock-low]="p.stock > 0 && p.stock <= 10"
+                        [class.stock-out]="p.stock === 0">
+                    {{ p.stock ?? 0 }}
+                  </span>
+                </ng-container>
+                <div *ngIf="editingStockId === p._id" class="stock-edit-row">
+                  <input type="number" class="stock-edit-input"
+                         [(ngModel)]="editingStockValue" min="0">
+                  <button class="btn-edit" (click)="saveStock(p)">Save</button>
+                  <button class="btn-delete" (click)="cancelEditStock()">&#x2715;</button>
+                </div>
+              </td>
+              <td>
+                <span class="status-badge"
+                      [class.status-completed]="p.stock > 10"
+                      [class.status-pending]="p.stock > 0 && p.stock <= 10"
+                      [class.status-cancelled]="p.stock === 0">
+                  {{ (p.stock ?? 0) === 0 ? 'Out of Stock' : (p.stock ?? 0) <= 10 ? 'Low Stock' : 'In Stock' }}
+                </span>
+              </td>
+              <td>
+                <button class="btn-edit" (click)="startEditStock(p)">Edit Stock</button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredInventory.length === 0">
+              <td colspan="6" class="empty-row">No products match this filter.</td>
             </tr>
           </tbody>
         </table>

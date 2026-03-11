@@ -1,7 +1,7 @@
 ﻿import { Component, OnInit, OnDestroy, AfterViewInit, Inject, PLATFORM_ID, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Header } from '../header/header';
 import { Footer } from '../footer/footer';
 import { ApiService } from '../api.service';
@@ -65,7 +65,8 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
     @Inject(PLATFORM_ID) private platformId: Object,
     private cdr: ChangeDetectorRef,
     private api: ApiService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -82,6 +83,23 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
         this.initAboutSection();
         this.initStackFade();
       }, 300);
+
+      // Handle fragment navigation (e.g. /home#about from header links on other pages)
+      const fragment = this.route.snapshot.fragment;
+      if (fragment) {
+        setTimeout(() => {
+          const container = this.stackContainer?.nativeElement as HTMLElement | undefined;
+          const section = document.getElementById(fragment);
+          if (!container || !section) return;
+          const allSections = Array.from(container.querySelectorAll<HTMLElement>('section[id]'));
+          let offset = 0;
+          for (const s of allSections) {
+            if (s.id === fragment) break;
+            offset += s.scrollHeight || s.offsetHeight;
+          }
+          container.scrollTo({ top: offset, behavior: 'smooth' });
+        }, 700);
+      }
     }
   }
 

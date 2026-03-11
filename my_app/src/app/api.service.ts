@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -123,13 +123,38 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
+  private handleError(err: any): Observable<never> {
+    let message = 'Something went wrong. Please try again.';
+    if (err.error) {
+      if (typeof err.error === 'string') {
+        try {
+          const parsed = JSON.parse(err.error);
+          message = parsed.message || message;
+        } catch {
+          message = err.error || message;
+        }
+      } else if (typeof err.error === 'object') {
+        message = err.error.message || message;
+      }
+    } else if (err.message) {
+      message = err.message;
+    }
+    return throwError(() => ({ error: { message } }));
+  }
+
   // ────────────── USER ──────────────
   register(data: { email: string; password: string; name: string; phone?: string; address?: string }): Observable<User> {
-    return this.http.post<ApiResponse<User>>(`${this.base}/users/register`, data).pipe(map(r => r.data));
+    return this.http.post<ApiResponse<User>>(`${this.base}/users/register`, data).pipe(
+      map(r => r.data),
+      catchError(err => this.handleError(err))
+    );
   }
 
   login(email: string, password: string): Observable<User> {
-    return this.http.post<ApiResponse<User>>(`${this.base}/users/login`, { email, password }).pipe(map(r => r.data));
+    return this.http.post<ApiResponse<User>>(`${this.base}/users/login`, { email, password }).pipe(
+      map(r => r.data),
+      catchError(err => this.handleError(err))
+    );
   }
 
   getUsers(): Observable<User[]> {

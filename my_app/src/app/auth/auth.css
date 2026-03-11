@@ -362,19 +362,38 @@
       justify-content: center;
       align-items: center;
       margin: 0 5px;
-      height: 40px;
-      width: 40px;
+      height: 42px;
+      width: 42px;
       transition: all 0.3s ease;
       color: #666;
       background: #f8f8f8;
+      text-decoration: none;
     }
 
     .social-container a:hover {
-      border-color: #333;
-      background: #333;
-      color: #fff;
       transform: translateY(-3px);
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .social-facebook { color: #1877F2 !important; }
+    .social-facebook:hover {
+      background: #1877F2 !important;
+      border-color: #1877F2 !important;
+      color: #fff !important;
+    }
+
+    .social-apple { color: #000 !important; }
+    .social-apple:hover {
+      background: #000 !important;
+      border-color: #000 !important;
+      color: #fff !important;
+    }
+
+    .social-google { background: #fff !important; }
+    .social-google:hover {
+      background: #fff !important;
+      border-color: #4285F4 !important;
+      box-shadow: 0 5px 15px rgba(66, 133, 244, 0.3) !important;
     }
 
     /* Mobile Responsive */
@@ -407,8 +426,45 @@
     }
 
     .error-msg {
-      color: #e74c3c;
+      color: #c0392b;
+      background-color: #fdf0ef;
+      border: 1px solid #f5c6c2;
+      border-radius: 8px;
       font-size: 13px;
+      padding: 8px 12px;
       margin: 6px 0;
       text-align: center;
+      width: 100%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .field-error {
+      display: block;
+      color: #e74c3c;
+      font-size: 11px;
+      margin: -6px 0 6px 2px;
+      text-align: left;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .input-error {
+      border-color: #e74c3c !important;
+      background-color: #fff8f8 !important;
+    }
+
+    .success-msg {
+      color: #27ae60;
+      background-color: #eafaf1;
+      border: 1px solid #a9dfbf;
+      border-radius: 8px;
+      font-size: 13px;
+      padding: 8px 12px;
+      margin: 6px 0;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
     }

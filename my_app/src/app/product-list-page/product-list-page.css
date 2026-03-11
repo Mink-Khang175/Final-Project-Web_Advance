@@ -58,6 +58,8 @@
   top: calc(100% + 1px);
   left: 0;
   min-width: 180px;
+  max-height: 340px;
+  overflow-y: auto;
   background: #fff;
   border: 1px solid #d0d0d0;
   border-top: none;
@@ -88,6 +90,27 @@
 .dropdown-option.selected {
   background: #111;
   color: #fff;
+}
+
+.dropdown-toggle {
+  padding: 10px 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #888;
+  background: #fafafa;
+  border-top: 1px dashed #e0e0e0;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+  position: sticky;
+  bottom: 0;
+}
+
+.dropdown-toggle:hover {
+  background: #f0f0f0;
+  color: #111;
 }
 
 /* ---- Meta row ---- */

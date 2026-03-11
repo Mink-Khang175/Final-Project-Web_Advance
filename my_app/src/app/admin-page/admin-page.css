@@ -589,3 +589,294 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* ==========================================
+   SIDEBAR DIVIDER
+   ========================================== */
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 8px 16px;
+}
+
+/* ==========================================
+   KPI CARDS
+   ========================================== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.kpi-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.kpi-revenue { background: #f0fdf4; color: #166534; }
+.kpi-orders  { background: #eff6ff; color: #1d4ed8; }
+.kpi-users   { background: #fdf4ff; color: #7e22ce; }
+.kpi-avg     { background: #fefce8; color: #854d0e; }
+
+.kpi-body { min-width: 0; }
+
+.kpi-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.kpi-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+/* ==========================================
+   DASHBOARD CARDS & LAYOUT
+   ========================================== */
+.dashboard-row {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-row { grid-template-columns: 1fr; }
+}
+
+.dash-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 0;
+}
+
+.dash-card-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 18px;
+}
+
+/* ==========================================
+   BAR CHART (CSS-only)
+   ========================================== */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  height: 160px;
+  padding-bottom: 28px;
+  position: relative;
+}
+
+.bar-chart-lg {
+  height: 200px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 2px;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #2d2d2d 0%, #555 100%);
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+  transition: height 0.5s ease;
+  cursor: default;
+}
+
+.bar-fill:hover {
+  background: linear-gradient(180deg, #111 0%, #444 100%);
+}
+
+.bar-label {
+  position: absolute;
+  bottom: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #888;
+  text-align: center;
+  width: 100%;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================
+   ORDER STATUS DIST
+   ========================================== */
+.status-dist {
+  margin-bottom: 14px;
+}
+
+.status-dist:last-child { margin-bottom: 0; }
+
+.status-dist-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.status-dist-val {
+  font-size: 0.72rem;
+  color: #888;
+  font-weight: 600;
+}
+
+.dist-bar-track {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dist-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.dist-bar-fill.status-pending    { background: #d97706; }
+.dist-bar-fill.status-processing { background: #2563eb; }
+.dist-bar-fill.status-completed  { background: #16a34a; }
+.dist-bar-fill.status-cancelled  { background: #dc2626; }
+
+/* ==========================================
+   RANK BADGE (Top Products)
+   ========================================== */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: #111;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.62rem;
+  font-weight: 800;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   PERIOD TABS (Sales + Inventory filters)
+   ========================================== */
+.period-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.period-tabs button {
+  padding: 8px 18px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0;
+}
+
+.period-tabs button:hover {
+  border-color: #111;
+  color: #111;
+  transform: none;
+  box-shadow: none;
+}
+
+.period-tabs button.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* ==========================================
+   TOTALS ROW (Sales table)
+   ========================================== */
+.totals-row td {
+  background: #fafafa;
+  border-top: 2px solid #e5e5e5 !important;
+  font-size: 0.8rem;
+}
+
+/* ==========================================
+   INVENTORY SPECIFIC
+   ========================================== */
+.product-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stock-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stock-edit-input {
+  width: 72px;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.stock-edit-input:focus {
+  border-color: #111;
+}
+
+.text-warn   { color: #d97706; font-weight: 600; }
+.text-danger { color: #dc2626; font-weight: 600; }

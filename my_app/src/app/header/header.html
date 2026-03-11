@@ -37,8 +37,9 @@
             class="search-input"
             [(ngModel)]="searchQuery"
             (input)="onSearchInput()"
+            (keydown.enter)="onSearchEnter()"
             (blur)="onSearchBlur()"
-            placeholder="Search..."
+            placeholder="Search products..."
             #searchInput>
           <button class="search-icon" (click)="toggleSearch($event)">
             <i class="fas fa-search"></i>
@@ -99,6 +100,23 @@
         </label>
       </div>
     </nav>
+  </div>
+
+  <!-- Search Suggestions (outside blend context to avoid mix-blend-mode) -->
+  <div class="search-suggestions" *ngIf="showSuggestions">
+    <div class="suggestion-item" *ngFor="let p of searchSuggestions" (mousedown)="selectSuggestion(p)">
+      <div class="suggestion-img-wrap">
+        <img [src]="p.image || '/assets/images/placeholder.jpg'" [alt]="p.name" class="suggestion-img">
+      </div>
+      <div class="suggestion-info">
+        <span class="suggestion-name">{{ p.name }}</span>
+        <span class="suggestion-cat">{{ p.category }}</span>
+      </div>
+      <span class="suggestion-price">{{ (p.originalPrice || p.price) | number }}₫</span>
+    </div>
+    <div class="suggestion-footer" (mousedown)="onSearchEnter()">
+      See all results for &ldquo;{{ searchQuery }}&rdquo; <i class="fas fa-arrow-right"></i>
+    </div>
   </div>
 
   <!-- Sidebar with Glassmorphism (outside blend context) -->

@@ -9,7 +9,7 @@
     <nav class="pd-breadcrumb">
       <a routerLink="/product-list">ALL PRODUCTS</a>
       <span class="sep">/</span>
-      <span *ngIf="product?.category">{{ product!.category?.toUpperCase() }}</span>
+      <a *ngIf="product?.category" [routerLink]="'/product-list'" [queryParams]="{category: product!.category}">{{ product!.category?.toUpperCase() }}</a>
       <span class="sep" *ngIf="product?.category">/</span>
       <span class="current" *ngIf="product">{{ product!.name.toUpperCase() }}</span>
     </nav>

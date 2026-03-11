@@ -61,6 +61,9 @@ export class ProductDetail implements OnInit {
         return;
       }
       this.isLoading = true;
+      if (isPlatformBrowser(this.platformId)) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       this.api.getProduct(id).subscribe({
         next: (p: ApiProduct) => {
           this.product = p;
@@ -125,6 +128,13 @@ export class ProductDetail implements OnInit {
 
   addToCart(): void {
     if (!this.product || this.isSoldOut || !isPlatformBrowser(this.platformId)) return;
+
+    const raw = localStorage.getItem('loggedInUser');
+    if (!raw) {
+      this.router.navigate(['/auth']);
+      return;
+    }
+
     const item = {
       productId: this.product._id,
       productName: this.product.name,
@@ -134,16 +144,15 @@ export class ProductDetail implements OnInit {
       color: this.selectedColor || undefined,
       quantity: this.quantity
     };
-    const raw = localStorage.getItem('loggedInUser');
-    if (raw) {
-      this.api.addToCart(JSON.parse(raw)._id, item).subscribe({
-        next: () => this.toast('Added to cart!'),
-        error: () => { this.saveLocal(item); this.toast('Added to cart!'); }
-      });
-    } else {
-      this.saveLocal(item);
-      this.toast('Added to cart!');
-    }
+
+    this.api.addToCart(JSON.parse(raw)._id, item).subscribe({
+      next: () => {
+        if (isPlatformBrowser(this.platformId)) {
+          window.dispatchEvent(new Event('cart-updated'));
+        }
+      },
+      error: () => this.toast('Failed to add to cart. Please try again.')
+    });
   }
 
   buyNow(e: Event): void {
@@ -159,13 +168,6 @@ export class ProductDetail implements OnInit {
       quantity: this.quantity
     }));
     this.toast('Proceeding to checkout…');
-  }
-
-  private saveLocal(item: any): void {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const idx = cart.findIndex((c: any) => c.productId === item.productId && c.size === item.size);
-    if (idx > -1) cart[idx].quantity += item.quantity; else cart.push(item);
-    localStorage.setItem('cart', JSON.stringify(cart));
   }
 
   private toast(msg: string): void {
