@@ -1,0 +1,64 @@
+<app-header></app-header>
+
+<div class="payment-wrapper">
+	<section class="payment-hero">
+		<div class="payment-hero-overlay"></div>
+		<div class="payment-hero-content">
+			<p class="payment-hero-sub">AVANT ATELIER</p>
+			<h1>Bank Transfer</h1>
+		</div>
+	</section>
+
+	<div class="payment-content" *ngIf="!loading && pendingData">
+		<div class="payment-grid">
+			<section class="payment-left">
+				<h2>Select Transfer Method</h2>
+				<div class="payment-options">
+					<button type="button" class="option-btn" [class.active]="option === 'momo'" (click)="selectOption('momo')">
+						<span class="title">MoMo</span>
+						<span class="desc">Transfer via MoMo wallet</span>
+					</button>
+					<button type="button" class="option-btn" [class.active]="option === 'bank'" (click)="selectOption('bank')">
+						<span class="title">Bank Transfer</span>
+						<span class="desc">Transfer via VietQR bank transfer</span>
+					</button>
+				</div>
+
+				<div class="payment-meta">
+					<p><span>Customer:</span> {{ pendingData.customerName || 'Guest' }}</p>
+					<p><span>Phone:</span> {{ pendingData.phone || 'N/A' }}</p>
+					<p><span>Total:</span> {{ pendingData.amount | number }}₫</p>
+				</div>
+
+				<p class="hint">After scanning the QR and completing the transfer, click "I Have Paid" to finish your order.</p>
+
+				<div class="actions">
+					<button type="button" class="btn ghost" (click)="goBackCheckout()">Back to Checkout</button>
+					<button type="button" class="btn primary" [disabled]="submitting" (click)="confirmPaid()">
+						<span *ngIf="!submitting">I Have Paid</span>
+						<span *ngIf="submitting">Processing...</span>
+					</button>
+				</div>
+
+				<p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+			</section>
+
+			<aside class="payment-right">
+				<div class="qr-card">
+					<p class="qr-tag" [class.momo]="option === 'momo'" [class.bank]="option === 'bank'">
+						{{ option === 'momo' ? 'MoMo QR' : 'Bank QR' }}
+					</p>
+					<img [src]="currentQr" (error)="onQrError()" alt="QR Payment" />
+					<p class="qr-note">Image source: assets/images/QR</p>
+				</div>
+			</aside>
+		</div>
+	</div>
+
+	<div class="payment-loading" *ngIf="loading">
+		<div class="spinner"></div>
+		<p>Loading payment information...</p>
+	</div>
+</div>
+
+<app-footer></app-footer>

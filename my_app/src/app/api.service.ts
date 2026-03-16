@@ -26,6 +26,7 @@ export interface User {
   gender?: string;
   role?: string;
   avatar?: string;
+  image?: string;
   membershipLevel?: string;
   totalSpent?: number;
   isActive?: boolean;
@@ -95,26 +96,34 @@ export interface Order {
   createdAt?: string;
 }
 
-// ── Category ──
-export interface Category {
+// ── Wishlist ──
+export interface WishlistItem {
   _id: string;
-  name: string;
-  slug?: string;
-  description?: string;
+  userId: string;
+  productId: string;
+  productName?: string;
   image?: string;
-  isActive?: boolean;
+  price?: number;
+  category?: string;
+  createdAt?: string;
 }
 
-// ── Review ──
-export interface Review {
+// ── Returns ──
+export interface ReturnRequest {
   _id: string;
-  productId: string;
   userId: string;
-  rating: number;
-  comment?: string;
-  userName?: string;
-  userAvatar?: string;
+  orderId: string;
+  orderNumber: string;
+  reason?: string;
+  status?: string;
+  items?: OrderItem[];
+  totalAmount?: number;
   createdAt?: string;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -244,21 +253,41 @@ export class ApiService {
     return this.http.delete<ApiResponse<any>>(`${this.base}/orders/${id}`);
   }
 
-  // ────────────── CATEGORY ──────────────
-  getCategories(): Observable<Category[]> {
-    return this.http.get<ApiResponse<Category[]>>(`${this.base}/categories`).pipe(map(r => r.data));
+  // ────────────── WISHLIST ──────────────
+  getWishlist(userId: string): Observable<WishlistItem[]> {
+    return this.http.get<ApiResponse<WishlistItem[]>>(`${this.base}/wishlist/${userId}`).pipe(map(r => r.data));
   }
 
-  // ────────────── REVIEW ──────────────
-  getReviewsByProduct(productId: string): Observable<Review[]> {
-    return this.http.get<ApiResponse<Review[]>>(`${this.base}/reviews/product/${productId}`).pipe(map(r => r.data));
+  addToWishlist(data: Partial<WishlistItem>): Observable<WishlistItem> {
+    return this.http.post<ApiResponse<WishlistItem>>(`${this.base}/wishlist`, data).pipe(map(r => r.data));
   }
 
-  createReview(data: Partial<Review>): Observable<Review> {
-    return this.http.post<ApiResponse<Review>>(`${this.base}/reviews`, data).pipe(map(r => r.data));
+  removeFromWishlist(userId: string, productId: string): Observable<any> {
+    return this.http.delete<ApiResponse<any>>(`${this.base}/wishlist/${userId}/${productId}`);
   }
 
-  deleteReview(id: string): Observable<any> {
-    return this.http.delete<ApiResponse<any>>(`${this.base}/reviews/${id}`);
+  // ────────────── RETURNS ──────────────
+  getReturnsByUser(userId: string): Observable<ReturnRequest[]> {
+    return this.http.get<ApiResponse<ReturnRequest[]>>(`${this.base}/returns/user/${userId}`).pipe(map(r => r.data));
+  }
+
+  createReturn(data: Partial<ReturnRequest>): Observable<ReturnRequest> {
+    return this.http.post<ApiResponse<ReturnRequest>>(`${this.base}/returns`, data).pipe(map(r => r.data));
+  }
+
+  // ────────────── AI CHAT ──────────────
+  askAssistant(
+    message: string,
+    history: ChatMessage[],
+    userName?: string,
+    options?: { model?: string; apiVersion?: string }
+  ): Observable<string> {
+    return this.http.post<ApiResponse<{ reply: string }>>(`${this.base}/chat/assistant`, {
+      message,
+      history,
+      userName,
+      model: options?.model,
+      apiVersion: options?.apiVersion
+    }).pipe(map(r => r.data.reply));
   }
 }

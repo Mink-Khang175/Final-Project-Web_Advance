@@ -1,1 +1,135 @@
-<p>checkout-page works!</p>
+<app-header></app-header>
+
+<div class="checkout-wrapper">
+	<section class="checkout-hero">
+		<div class="checkout-hero-overlay"></div>
+		<div class="checkout-hero-content">
+			<p class="checkout-hero-sub">AVANT ATELIER</p>
+			<h1>Secure Checkout</h1>
+		</div>
+	</section>
+
+	<div class="checkout-content" *ngIf="!loading && !orderPlaced">
+		<div class="checkout-grid" *ngIf="orderItems.length > 0; else emptyCheckout">
+			<section class="checkout-form-col">
+				<h2>Shipping Information</h2>
+
+				<div class="form-grid">
+					<label>
+						<span>Full name</span>
+						<input type="text" [(ngModel)]="fullName" placeholder="Enter your full name" />
+					</label>
+
+					<label>
+						<span>Phone number</span>
+						<input type="text" [(ngModel)]="phone" placeholder="Enter your phone number" />
+					</label>
+
+					<label>
+						<span>Email</span>
+						<input type="email" [(ngModel)]="email" placeholder="you@example.com" />
+					</label>
+
+					<label>
+						<span>City</span>
+						<input type="text" [(ngModel)]="city" placeholder="City" />
+					</label>
+
+					<label class="full-row">
+						<span>Address</span>
+						<input type="text" [(ngModel)]="address" placeholder="Street, district, ward" />
+					</label>
+
+					<label class="full-row">
+						<span>Order note</span>
+						<textarea rows="3" [(ngModel)]="notes" placeholder="Optional notes for this order"></textarea>
+					</label>
+				</div>
+
+				<h3>Payment Method</h3>
+				<div class="payment-options">
+					<button type="button" class="payment-btn" [class.active]="paymentMethod === 'cod'" (click)="paymentMethod = 'cod'">
+						<span class="pm-title">Cash On Delivery</span>
+						<span class="pm-sub">Pay when your order arrives</span>
+					</button>
+
+					<button type="button" class="payment-btn" [class.active]="paymentMethod === 'banking'" (click)="paymentMethod = 'banking'">
+						<span class="pm-title">Bank Transfer</span>
+						<span class="pm-sub">Transfer after placing order</span>
+					</button>
+				</div>
+
+				<p class="checkout-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+			</section>
+
+			<aside class="checkout-summary-col">
+				<h2>Order Summary</h2>
+
+				<div class="summary-item" *ngFor="let item of orderItems; trackBy: trackByIndex">
+					<div class="summary-thumb">
+						<img [src]="item.image || '/assets/images/placeholder.jpg'" [alt]="item.productName || 'Product'" />
+					</div>
+					<div class="summary-info">
+						<p class="summary-name">{{ item.productName }}</p>
+						<p class="summary-variant" *ngIf="item.size || item.color">
+							<span *ngIf="item.size">{{ item.size }}</span>
+							<span *ngIf="item.size && item.color"> / </span>
+							<span *ngIf="item.color">{{ item.color }}</span>
+						</p>
+						<p class="summary-qty">Qty: {{ item.quantity }}</p>
+					</div>
+					<p class="summary-price">{{ item.price * item.quantity | number }}₫</p>
+				</div>
+
+				<div class="summary-divider"></div>
+
+				<div class="summary-row">
+					<span>Subtotal</span>
+					<span>{{ subtotal | number }}₫</span>
+				</div>
+
+				<div class="summary-row">
+					<span>Shipping</span>
+					<span *ngIf="shippingFee === 0" class="free">FREE</span>
+					<span *ngIf="shippingFee > 0">{{ shippingFee | number }}₫</span>
+				</div>
+
+				<div class="summary-row total">
+					<span>Total</span>
+					<span>{{ total | number }}₫</span>
+				</div>
+
+				<button class="btn-place-order" type="button" [disabled]="placingOrder" (click)="placeOrder()">
+					<span *ngIf="!placingOrder">Place Order</span>
+					<span *ngIf="placingOrder">Processing...</span>
+				</button>
+			</aside>
+		</div>
+	</div>
+
+	<div class="checkout-loading" *ngIf="loading">
+		<div class="spinner"></div>
+		<p>Preparing your checkout...</p>
+	</div>
+
+	<div class="checkout-success" *ngIf="orderPlaced">
+		<p class="success-tag">ORDER CONFIRMED</p>
+		<h2>Thank you for your purchase</h2>
+		<p class="success-order">Order ID: {{ orderId }}</p>
+		<p>We have received your order and will process it shortly.</p>
+		<div class="success-actions">
+			<button type="button" (click)="goToHome()">Continue Shopping</button>
+			<button type="button" class="ghost" (click)="goToProfile()">View My Profile</button>
+		</div>
+	</div>
+
+	<ng-template #emptyCheckout>
+		<div class="checkout-empty">
+			<h2>Your checkout is empty</h2>
+			<p>Please add products to cart first.</p>
+			<a routerLink="/product-list">Back to products</a>
+		</div>
+	</ng-template>
+</div>
+
+<app-footer></app-footer>

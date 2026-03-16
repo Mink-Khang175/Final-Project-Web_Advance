@@ -21,11 +21,23 @@
       </div>
 
       <div class="content-grid">
-        <div class="avatar-column">
+        <div class="avatar-column" (click)="$event.stopPropagation()">
           <div class="avatar-container">
-            <img [src]="userPhoto || 'assets/images/default-avatar.png'" 
-                 [alt]="userName" 
+            <img [src]="displayPhoto"
+                 [alt]="userName"
                  class="profile-avatar">
+            <button class="avatar-upload-btn"
+                    (click)="triggerAvatarUpload()"
+                    title="Change photo">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <input #avatarInput type="file" accept="image/*"
+                   (change)="onAvatarFileSelected($event)"
+                   style="display:none">
           </div>
         </div>
         

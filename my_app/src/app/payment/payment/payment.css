@@ -1,0 +1,278 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:host {
+	display: block;
+	width: 100%;
+	font-family: 'Poppins', sans-serif;
+}
+
+.payment-wrapper {
+	min-height: 100vh;
+	background: #f5f5f5;
+	padding-top: 70px;
+}
+
+.payment-hero {
+	position: relative;
+	height: 240px;
+	background: #121212 url('/assets/images/background texture.jpg') center / cover;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	overflow: hidden;
+}
+
+.payment-hero-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.56);
+}
+
+.payment-hero-content {
+	position: relative;
+	z-index: 1;
+	color: #fff;
+}
+
+.payment-hero-sub {
+	margin: 0 0 10px;
+	font-size: 11px;
+	letter-spacing: 0.35em;
+	text-transform: uppercase;
+	opacity: 0.6;
+}
+
+.payment-hero-content h1 {
+	margin: 0;
+	font-size: 2.4rem;
+	font-weight: 300;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
+}
+
+.payment-content {
+	max-width: 1160px;
+	margin: 0 auto;
+	padding: 48px 32px 64px;
+}
+
+.payment-grid {
+	display: grid;
+	grid-template-columns: 1fr 360px;
+	gap: 28px;
+}
+
+.payment-left,
+.payment-right {
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+}
+
+.payment-left {
+	padding: 28px;
+}
+
+.payment-right {
+	padding: 22px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.payment-left h2 {
+	margin: 0 0 20px;
+	font-size: 13px;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+}
+
+.payment-options {
+	display: grid;
+	gap: 10px;
+}
+
+.option-btn {
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	background: #fff;
+	text-align: left;
+	padding: 13px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	cursor: pointer;
+	transition: border-color 0.2s, transform 0.2s;
+}
+
+.option-btn:hover {
+	border-color: #bdbdbd;
+	transform: translateY(-1px);
+}
+
+.option-btn.active {
+	border-color: #1a1a1a;
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.option-btn .title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1a1a1a;
+}
+
+.option-btn .desc {
+	font-size: 12px;
+	color: #7f7f7f;
+}
+
+.payment-meta {
+	margin-top: 18px;
+	padding-top: 16px;
+	border-top: 1px solid #efefef;
+}
+
+.payment-meta p {
+	margin: 8px 0;
+	font-size: 14px;
+	color: #444;
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.payment-meta span {
+	color: #8e8e8e;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.hint {
+	margin: 16px 0 0;
+	font-size: 13px;
+	color: #8a8a8a;
+}
+
+.actions {
+	margin-top: 24px;
+	display: flex;
+	gap: 10px;
+}
+
+.btn {
+	border: none;
+	border-radius: 6px;
+	padding: 12px 18px;
+	font-family: 'Poppins', sans-serif;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.18em;
+	cursor: pointer;
+}
+
+.btn.primary {
+	background: #1a1a1a;
+	color: #fff;
+	flex: 1;
+}
+
+.btn.primary:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.btn.ghost {
+	background: #fff;
+	color: #1a1a1a;
+	border: 1px solid #d7d7d7;
+}
+
+.error {
+	margin: 12px 0 0;
+	color: #c0392b;
+	font-size: 13px;
+}
+
+.qr-card {
+	width: 100%;
+	border-radius: 10px;
+	background: linear-gradient(180deg, #fafafa, #f3f3f3);
+	padding: 18px;
+	text-align: center;
+}
+
+.qr-tag {
+	display: inline-block;
+	margin: 0 0 12px;
+	font-size: 11px;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	font-weight: 600;
+}
+
+.qr-tag.momo {
+	color: #a50064;
+}
+
+.qr-tag.bank {
+	color: #204a87;
+}
+
+.qr-card img {
+	width: 100%;
+	max-width: 300px;
+	border-radius: 12px;
+	background: #fff;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.qr-note {
+	margin: 12px 0 0;
+	font-size: 11px;
+	color: #8b8b8b;
+}
+
+.payment-loading {
+	padding: 70px 16px;
+	text-align: center;
+	color: #8f8f8f;
+}
+
+.spinner {
+	width: 36px;
+	height: 36px;
+	border: 3px solid #e5e5e5;
+	border-top-color: #1a1a1a;
+	border-radius: 50%;
+	margin: 0 auto 16px;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (max-width: 920px) {
+	.payment-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 640px) {
+	.payment-content {
+		padding: 30px 14px 52px;
+	}
+
+	.payment-left,
+	.payment-right {
+		padding: 18px 14px;
+	}
+
+	.actions {
+		flex-direction: column;
+	}
+}

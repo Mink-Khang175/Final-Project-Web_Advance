@@ -1,5 +1,9 @@
 <div class="product-card" [class.is-sold-out]="product.soldOut" (click)="navigateToDetail()">
 
+  <button class="wishlist-btn" type="button" [class.active]="isWishlisted" [disabled]="isWishlistBusy" (click)="toggleWishlist($event)" aria-label="Toggle wishlist">
+    <i class="fas fa-heart"></i>
+  </button>
+
   <span class="badge badge--sale" *ngIf="hasDiscount && !product.soldOut">SALE</span>
   <span class="badge badge--soldout" *ngIf="product.soldOut">SOLD OUT</span>
 

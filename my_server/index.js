@@ -6,14 +6,40 @@ const bodyParser = require('body-parser');
 const morgan = require('morgan');
 
 const app = express();
+const CHAT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_API_VERSION = process.env.GEMINI_API_VERSION || 'v1beta';
+const CHAT_REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 20000);
+
+async function callGenerateContent(apiKey, target, payload) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CHAT_REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/${target.version}/models/${target.model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    const json = await response.json();
+    const reply = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    return { ok: response.ok && Boolean(reply), reply, errorMessage: json?.error?.message || '', target };
+  } catch (error) {
+    return { ok: false, reply: '', errorMessage: error?.name === 'AbortError' ? 'Assistant request timeout.' : error.message || 'Network error.', target };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 // Import Models
 const User = require('./models/User');
 const Product = require('./models/Product');
 const Cart = require('./models/Cart');
 const Order = require('./models/Order');
-const Category = require('./models/Category');
-const Review = require('./models/Review');
+const Wishlist = require('./models/Wishlist');
+const Returns = require('./models/Returns');
 
 // Middleware
 app.use(cors());
@@ -45,6 +71,108 @@ app.get('/', (req, res) => {
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' });
+});
+
+// ==================== AI CHAT ROUTES ====================
+app.post('/api/chat/assistant', async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, message: 'GEMINI_API_KEY is not configured.' });
+    }
+
+    const { message, history = [], userName = 'customer', model: modelFromClient, apiVersion: apiVersionFromClient } = req.body || {};
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ success: false, message: 'Message is required.' });
+    }
+
+    const systemPrompt = [
+      'You are Ava, a premium customer support assistant for AVANT ATELIER.',
+      'Primary goals: be professional, warm, clear, and solution-focused.',
+      'Always mirror the customer language (Vietnamese/English).',
+      'Use this response style: (1) brief empathy line, (2) direct answer, (3) practical next step.',
+      'For product consultation, include fit advice, styling tip, and one alternative recommendation.',
+      'For shipping/returns/payment/policy questions: give accurate guidance only from known context.',
+      'If policy details are missing, explicitly say you need to confirm and offer to connect to human support.',
+      'Never fabricate order status, stock numbers, delivery dates, or discounts.',
+      'Do not be robotic; keep replies concise (normally 3-6 sentences) and easy to scan.',
+      `Customer name: ${userName}. Address naturally and respectfully.`
+    ].join(' ');
+
+    const normalizedHistory = Array.isArray(history)
+      ? history.slice(-4).map((m) => ({
+          role: m?.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: String(m?.text || '') }]
+        })).filter((m) => m.parts[0].text.trim())
+      : [];
+
+    const payload = {
+      contents: [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        ...normalizedHistory,
+        { role: 'user', parts: [{ text: String(message).trim() }] }
+      ],
+      generationConfig: {
+        temperature: 0.6,
+        topP: 0.9,
+        maxOutputTokens: 220
+      }
+    };
+
+    const primaryTarget = {
+      version: apiVersionFromClient || GEMINI_API_VERSION,
+      model: modelFromClient || CHAT_MODEL
+    };
+
+    const primaryAttempt = await callGenerateContent(apiKey, primaryTarget, payload);
+    if (primaryAttempt.ok) {
+      return res.json({
+        success: true,
+        data: {
+          reply: primaryAttempt.reply,
+          model: `${primaryAttempt.target.model}@${primaryAttempt.target.version}`
+        }
+      });
+    }
+
+    // One lightweight retry for timeout cases to improve stability without adding full fallback overhead.
+    if ((primaryAttempt.errorMessage || '').toLowerCase().includes('timeout')) {
+      const retryPayload = {
+        contents: [
+          { role: 'user', parts: [{ text: systemPrompt }] },
+          { role: 'user', parts: [{ text: String(message).trim() }] }
+        ],
+        generationConfig: {
+          temperature: 0.5,
+          topP: 0.8,
+          maxOutputTokens: 140
+        }
+      };
+
+      const retryAttempt = await callGenerateContent(apiKey, primaryTarget, retryPayload);
+      if (retryAttempt.ok) {
+        return res.json({
+          success: true,
+          data: {
+            reply: retryAttempt.reply,
+            model: `${retryAttempt.target.model}@${retryAttempt.target.version}`
+          }
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: retryAttempt.errorMessage || primaryAttempt.errorMessage || 'Assistant is temporarily unavailable.'
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: primaryAttempt.errorMessage || 'Assistant is temporarily unavailable.'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Unexpected server error.' });
+  }
 });
 
 // ==================== USER ROUTES ====================
@@ -331,6 +459,16 @@ app.delete('/api/cart/:userId', async (req, res) => {
 });
 
 // ==================== ORDER ROUTES ====================
+const generateOrderNumber = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const time = String(now.getTime()).slice(-6);
+  const random = Math.floor(100 + Math.random() * 900);
+  return `ORD-${y}${m}${d}-${time}${random}`;
+};
+
 // Get all orders
 app.get('/api/orders', async (req, res) => {
   try {
@@ -354,7 +492,11 @@ app.get('/api/orders/user/:userId', async (req, res) => {
 // Create new order
 app.post('/api/orders', async (req, res) => {
   try {
-    const order = new Order(req.body);
+    const payload = {
+      ...req.body,
+      orderNumber: req.body.orderNumber || generateOrderNumber()
+    };
+    const order = new Order(payload);
     await order.save();
     res.status(201).json({ success: true, data: order });
   } catch (error) {
@@ -388,47 +530,80 @@ app.delete('/api/orders/:id', async (req, res) => {
   }
 });
 
-// ==================== CATEGORY ROUTES ====================
-// Get all categories
-app.get('/api/categories', async (req, res) => {
+// ==================== WISHLIST ROUTES ====================
+app.get('/api/wishlist/:userId', async (req, res) => {
   try {
-    const categories = await Category.find();
-    res.json({ success: true, count: categories.length, data: categories });
+    const items = await Wishlist.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+    res.json({ success: true, count: items.length, data: items });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// ==================== REVIEW ROUTES ====================
-// Get reviews by product ID
-app.get('/api/reviews/product/:productId', async (req, res) => {
+app.post('/api/wishlist', async (req, res) => {
   try {
-    const reviews = await Review.find({ productId: req.params.productId }).populate('userId');
-    res.json({ success: true, count: reviews.length, data: reviews });
+    const { userId, productId, productName, image, price, category } = req.body;
+    const item = await Wishlist.findOneAndUpdate(
+      { userId, productId: String(productId) },
+      {
+        $setOnInsert: {
+          userId,
+          productId: String(productId),
+          productName,
+          image,
+          price,
+          category
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.status(201).json({ success: true, data: item });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Create new review
-app.post('/api/reviews', async (req, res) => {
+app.delete('/api/wishlist/:userId/:productId', async (req, res) => {
   try {
-    const review = new Review(req.body);
-    await review.save();
-    res.status(201).json({ success: true, data: review });
+    await Wishlist.findOneAndDelete({ userId: req.params.userId, productId: String(req.params.productId) });
+    res.json({ success: true, message: 'Removed from wishlist' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Delete review
-app.delete('/api/reviews/:id', async (req, res) => {
+// ==================== RETURNS ROUTES ====================
+app.get('/api/returns/user/:userId', async (req, res) => {
   try {
-    const review = await Review.findByIdAndDelete(req.params.id);
-    if (!review) {
-      return res.status(404).json({ success: false, message: 'Review not found' });
+    const items = await Returns.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+    res.json({ success: true, count: items.length, data: items });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/returns', async (req, res) => {
+  try {
+    const { userId, orderId, orderNumber, reason, items, totalAmount } = req.body;
+    const existing = await Returns.findOne({ userId, orderId });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Return request already exists for this order' });
     }
-    res.json({ success: true, message: 'Review deleted successfully' });
+
+    const doc = new Returns({
+      userId,
+      orderId,
+      orderNumber,
+      reason,
+      items,
+      totalAmount,
+      status: 'requested'
+    });
+    await doc.save();
+
+    await Order.findByIdAndUpdate(orderId, { status: 'return_requested' });
+
+    res.status(201).json({ success: true, data: doc });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -441,5 +616,6 @@ app.listen(PORT, () => {
   console.log(`   - GET  http://localhost:${PORT}/api/users`);
   console.log(`   - GET  http://localhost:${PORT}/api/products`);
   console.log(`   - GET  http://localhost:${PORT}/api/orders`);
-  console.log(`   - GET  http://localhost:${PORT}/api/categories`);
+  console.log(`   - GET  http://localhost:${PORT}/api/wishlist/:userId`);
+  console.log(`   - GET  http://localhost:${PORT}/api/returns/user/:userId`);
 });

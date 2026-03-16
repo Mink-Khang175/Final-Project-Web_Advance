@@ -1,11 +1,12 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Header } from '../header/header';
 import { Footer } from '../footer/footer';
 import { MembershipCard } from '../membership-card/membership-card';
-import { ApiService, Order as ApiOrder } from '../api.service';
+import { ChatAI } from '../chat-ai/chat-ai';
+import { ApiService, Order as ApiOrder, ReturnRequest, WishlistItem } from '../api.service';
 
 interface UserInfo {
   fullName: string;
@@ -24,7 +25,7 @@ interface UserInfo {
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule, Header, Footer, MembershipCard, FormsModule, RouterModule],
+  imports: [CommonModule, Header, Footer, MembershipCard, FormsModule, RouterModule, ChatAI],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -66,19 +67,30 @@ export class Profile implements OnInit {
   // Orders from API
   orders: ApiOrder[] = [];
   loadingOrders = false;
+  returnRequests: ReturnRequest[] = [];
+  loadingReturns = false;
+  wishlistItems: WishlistItem[] = [];
+  loadingWishlist = false;
+  returnSubmittingOrderIds: string[] = [];
 
   // Logged in user ID from MongoDB
-  private userId = '';
+  userId = '';
   
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private api: ApiService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
   
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.loadUserData();
+      this.route.queryParams.subscribe(params => {
+        if (params['tab'] === 'orders') {
+          this.setActiveMenu('orders');
+        }
+      });
     }
   }
   
@@ -121,6 +133,7 @@ export class Profile implements OnInit {
             this.userName = user.name;
             this.userEmail = user.email;
             this.memberStatus = user.membershipLevel || 'Silver';
+            this.userPhoto = user.image || user.avatar || '';
           },
           error: () => {} // Use cached data
         });
@@ -189,6 +202,17 @@ export class Profile implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
+  onAvatarChanged(imageBase64: string): void {
+    this.userPhoto = imageBase64;
+    // Sync into localStorage so header/other components reflect immediately
+    const saved = localStorage.getItem('loggedInUser');
+    if (saved) {
+      const userData = JSON.parse(saved);
+      userData.image = imageBase64;
+      localStorage.setItem('loggedInUser', JSON.stringify(userData));
+    }
+  }
+
   setActiveMenu(menu: string, event?: Event) {
     if (event) {
       event.preventDefault();
@@ -206,6 +230,34 @@ export class Profile implements OnInit {
         error: () => {
           this.orders = [];
           this.loadingOrders = false;
+        }
+      });
+    }
+
+    if (menu === 'returns' && this.userId) {
+      this.loadingReturns = true;
+      this.api.getReturnsByUser(this.userId).subscribe({
+        next: (list) => {
+          this.returnRequests = list || [];
+          this.loadingReturns = false;
+        },
+        error: () => {
+          this.returnRequests = [];
+          this.loadingReturns = false;
+        }
+      });
+    }
+
+    if (menu === 'wishlist' && this.userId) {
+      this.loadingWishlist = true;
+      this.api.getWishlist(this.userId).subscribe({
+        next: (list) => {
+          this.wishlistItems = list || [];
+          this.loadingWishlist = false;
+        },
+        error: () => {
+          this.wishlistItems = [];
+          this.loadingWishlist = false;
         }
       });
     }
@@ -229,8 +281,6 @@ export class Profile implements OnInit {
       'wishlist': 'MY WISHLIST',
       'alerts': 'MY ALERTS',
       'information': 'MY INFORMATION',
-      'credits': 'MY CREDITS & E-CARDS',
-      'payment': 'MY PAYMENT METHODS',
       'help': 'IN NEED OF HELP',
       'deactivate': 'DEACTIVATE MY ACCOUNT'
     };
@@ -243,5 +293,39 @@ export class Profile implements OnInit {
     }
     localStorage.removeItem('loggedInUser');
     this.router.navigate(['/auth']);
+  }
+
+  requestReturn(order: ApiOrder): void {
+    if (!this.userId || !order._id || this.returnSubmittingOrderIds.includes(order._id)) return;
+
+    this.returnSubmittingOrderIds.push(order._id);
+    this.api.createReturn({
+      userId: this.userId,
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      reason: 'Customer requested return',
+      totalAmount: order.totalAmount,
+      items: order.items
+    }).subscribe({
+      next: () => {
+        this.orders = this.orders.map(o => o._id === order._id ? { ...o, status: 'return_requested' } : o);
+        alert(`Return requested for order #${order.orderNumber}`);
+        this.returnSubmittingOrderIds = this.returnSubmittingOrderIds.filter(id => id !== order._id);
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Unable to request return for this order.');
+        this.returnSubmittingOrderIds = this.returnSubmittingOrderIds.filter(id => id !== order._id);
+      }
+    });
+  }
+
+  canRequestReturn(order: ApiOrder): boolean {
+    const status = (order.status || '').toLowerCase();
+    return !['return_requested', 'returned', 'cancelled'].includes(status);
+  }
+
+  isSubmittingReturn(orderId?: string): boolean {
+    if (!orderId) return false;
+    return this.returnSubmittingOrderIds.includes(orderId);
   }
 }

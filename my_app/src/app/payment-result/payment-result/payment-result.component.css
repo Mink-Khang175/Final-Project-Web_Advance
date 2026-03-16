@@ -1,0 +1,143 @@
+.result-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #f5f5f5;
+    font-family: 'Poppins', sans-serif;
+    padding: 20px;
+}
+
+.result-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    max-width: 520px;
+    overflow: hidden;
+    text-align: center;
+}
+
+.result-card.success {
+    border-top: 5px solid #2e7d32;
+}
+
+.result-card.error {
+    border-top: 5px solid #c0392b;
+}
+
+.result-icon {
+    margin: 30px auto 12px;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.success .result-icon {
+    background-color: #2e7d32;
+}
+
+.error .result-icon {
+    background-color: #c0392b;
+}
+
+.result-content {
+    padding: 20px 30px;
+}
+
+.result-tag {
+    margin: 0 0 10px;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: #8e8e8e;
+    text-transform: uppercase;
+}
+
+.result-content h2 {
+    margin: 0;
+    color: #1a1a1a;
+    font-size: 1.65rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.message {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 25px;
+}
+
+.details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.92rem;
+    color: #555;
+    gap: 12px;
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.result-actions {
+    padding: 20px 30px 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.back-btn {
+    background-color: #fff;
+    color: #1a1a1a;
+    border: 1px solid #d7d7d7;
+}
+
+.back-btn:hover {
+    background-color: #f7f7f7;
+}
+
+.orders-btn {
+    background-color: #1a1a1a;
+    color: #fff;
+}
+
+.orders-btn:hover {
+    background-color: #333;
+}
+
+.retry-btn {
+    background-color: #c0392b;
+    color: white;
+}
+
+.retry-btn:hover {
+    background-color: #a93226;
+}

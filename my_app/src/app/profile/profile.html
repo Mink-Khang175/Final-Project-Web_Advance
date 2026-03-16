@@ -45,16 +45,6 @@
             <span>My Alerts</span>
             <i class="fas fa-chevron-right arrow"></i>
           </a>
-          <a href="#" class="menu-item" [class.active]="activeMenu === 'credits'" (click)="setActiveMenu('credits', $event)">
-            <i class="fas fa-credit-card"></i>
-            <span>Credits & E-Cards</span>
-            <i class="fas fa-chevron-right arrow"></i>
-          </a>
-          <a href="#" class="menu-item" [class.active]="activeMenu === 'payment'" (click)="setActiveMenu('payment', $event)">
-            <i class="fas fa-wallet"></i>
-            <span>Payment Methods</span>
-            <i class="fas fa-chevron-right arrow"></i>
-          </a>
           <a href="#" class="menu-item" [class.active]="activeMenu === 'help'" (click)="setActiveMenu('help', $event)">
             <i class="fas fa-question-circle"></i>
             <span>In Need of Help</span>
@@ -110,30 +100,65 @@
                   <div style="text-align:right; font-weight:600; margin-top:8px;">
                     Total: {{ order.totalAmount | currency:'USD' }}
                   </div>
+                  <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                    <button
+                      *ngIf="canRequestReturn(order)"
+                      (click)="requestReturn(order)"
+                      [disabled]="isSubmittingReturn(order._id)"
+                      style="border:1px solid #ddd; background:#fff; color:#222; font-size:12px; letter-spacing:.06em; text-transform:uppercase; padding:8px 12px; border-radius:6px; cursor:pointer;">
+                      {{ isSubmittingReturn(order._id) ? 'Requesting...' : 'Request Return' }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Returns -->
             <div *ngSwitchCase="'returns'" class="returns-section fade-in">
-              <div class="empty-state">
+              <div class="empty-state" *ngIf="loadingReturns">
+                <p>Loading return requests...</p>
+              </div>
+              <div class="empty-state" *ngIf="!loadingReturns && returnRequests.length === 0">
                 <div class="empty-icon-wrap">
                   <i class="fas fa-undo"></i>
                 </div>
                 <h3>No Returns Requested</h3>
                 <p>All your return requests will appear here.</p>
               </div>
+              <div *ngIf="!loadingReturns && returnRequests.length > 0" class="orders-list">
+                <div class="order-item" *ngFor="let ret of returnRequests" style="border:1px solid #e0e0e0; border-radius:8px; padding:16px; margin-bottom:12px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong>Return for #{{ ret.orderNumber }}</strong>
+                    <span style="text-transform:capitalize; font-size:13px; padding:4px 10px; border-radius:12px; background:#f0f0f0;">{{ ret.status }}</span>
+                  </div>
+                  <p style="font-size:13px; color:#666; margin:0;">{{ ret.createdAt | date:'medium' }}</p>
+                  <p style="font-size:13px; color:#666; margin:8px 0 0;">{{ ret.reason }}</p>
+                </div>
+              </div>
             </div>
 
             <!-- Wishlist -->
             <div *ngSwitchCase="'wishlist'" class="wishlist-section fade-in">
-              <div class="empty-state">
+              <div class="empty-state" *ngIf="loadingWishlist">
+                <p>Loading wishlist...</p>
+              </div>
+              <div class="empty-state" *ngIf="!loadingWishlist && wishlistItems.length === 0">
                 <div class="empty-icon-wrap">
                   <i class="fas fa-heart"></i>
                 </div>
                 <h3>Your Wishlist Is Empty</h3>
                 <p>Save the pieces you love and come back when you're ready.</p>
-                <a routerLink="/products" class="discover-btn">Start Shopping</a>
+                <a routerLink="/product-list" class="discover-btn">Start Shopping</a>
+              </div>
+              <div *ngIf="!loadingWishlist && wishlistItems.length > 0" class="orders-list">
+                <div class="order-item" *ngFor="let wish of wishlistItems" style="border:1px solid #e0e0e0; border-radius:8px; padding:16px; margin-bottom:12px; display:flex; gap:12px; align-items:center;">
+                  <img [src]="wish.image || '/assets/images/placeholder.jpg'" [alt]="wish.productName" style="width:60px; height:72px; object-fit:cover; border-radius:6px; background:#f5f5f5;" />
+                  <div style="flex:1;">
+                    <div style="font-weight:600;">{{ wish.productName }}</div>
+                    <div style="color:#666; font-size:13px;">{{ wish.category }}</div>
+                  </div>
+                  <div style="font-weight:600;">{{ wish.price | currency:'USD' }}</div>
+                </div>
               </div>
             </div>
 
@@ -148,37 +173,9 @@
               </div>
             </div>
 
-            <!-- Credits -->
-            <div *ngSwitchCase="'credits'" class="credits-section fade-in">
-              <div class="empty-state">
-                <div class="empty-icon-wrap">
-                  <i class="fas fa-credit-card"></i>
-                </div>
-                <h3>No Credits or E-Cards</h3>
-                <p>Gift cards and store credits will be managed here.</p>
-              </div>
-            </div>
-
-            <!-- Payment -->
-            <div *ngSwitchCase="'payment'" class="payment-section fade-in">
-              <div class="empty-state">
-                <div class="empty-icon-wrap">
-                  <i class="fas fa-wallet"></i>
-                </div>
-                <h3>No Payment Methods</h3>
-                <p>Add a payment method for a faster checkout experience.</p>
-              </div>
-            </div>
-
             <!-- Help -->
             <div *ngSwitchCase="'help'" class="help-section fade-in">
-              <div class="empty-state">
-                <div class="empty-icon-wrap">
-                  <i class="fas fa-question-circle"></i>
-                </div>
-                <h3>How Can We Help?</h3>
-                <p>Reach out to us at <strong>info&#64;avantatelier.com</strong> or visit our contact page.</p>
-              </div>
+              <app-chat-ai [userName]="userName"></app-chat-ai>
             </div>
 
             <!-- Deactivate -->
@@ -205,7 +202,9 @@
                   [cardNumber]="cardNumber"
                   [barcodeNumber]="barcodeNumber"
                   [memberSince]="memberSince"
-                  [memberStatus]="memberStatus">
+                  [memberStatus]="memberStatus"
+                  [userId]="userId"
+                  (avatarChanged)="onAvatarChanged($event)">
                 </app-membership-card>
               </div>
 

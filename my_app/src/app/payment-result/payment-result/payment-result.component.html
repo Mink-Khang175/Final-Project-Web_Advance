@@ -1,0 +1,35 @@
+<div class="result-container">
+    <div class="result-card" [ngClass]="{'success': isSuccess, 'error': !isSuccess}">
+        <div class="result-icon">
+            <span *ngIf="isSuccess">✓</span>
+            <span *ngIf="!isSuccess">✕</span>
+        </div>
+
+        <div class="result-content">
+            <p class="result-tag">AVANT ATELIER</p>
+            <h2>{{ isSuccess ? 'Purchase Successful!' : 'Payment Failed!' }}</h2>
+            <p class="message">{{ message }}</p>
+
+            <div class="details" *ngIf="orderId">
+                <div class="detail-row">
+                    <span>Order ID:</span>
+                    <strong>{{ orderId }}</strong>
+                </div>
+                <div class="detail-row" *ngIf="amount">
+                    <span>Amount:</span>
+                    <strong>{{ amount | number:'1.0-0' }} VNĐ</strong>
+                </div>
+                <div class="detail-row" *ngIf="method">
+                    <span>Method:</span>
+                    <strong>{{ method | uppercase }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-actions">
+            <button class="back-btn" (click)="goBackToHome()">Back to Home</button>
+            <button class="orders-btn" *ngIf="isSuccess" (click)="goToOrders()">View My Orders</button>
+            <button class="retry-btn" *ngIf="!isSuccess" routerLink="/checkout">Try Again</button>
+        </div>
+    </div>
+</div>

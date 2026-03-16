@@ -91,12 +91,17 @@ export class ProductDetail implements OnInit {
   }
 
   private setupProduct(p: ApiProduct): void {
-    if (p.images && p.images.length > 0) {
-      this.gallerySources = p.images;
-    } else {
-      this.gallerySources = p.image ? [p.image] : [];
+    const normalizedMain = this.normalizeImagePath(p.image);
+    const normalizedGallery = (p.images ?? [])
+      .map(src => this.normalizeImagePath(src))
+      .filter((src): src is string => !!src);
+
+    this.gallerySources = normalizedGallery.length > 0 ? normalizedGallery : (normalizedMain ? [normalizedMain] : []);
+    if (normalizedMain && !this.gallerySources.includes(normalizedMain)) {
+      this.gallerySources.unshift(normalizedMain);
     }
-    this.mainImage = this.gallerySources[0] || '';
+
+    this.mainImage = this.gallerySources[0] || normalizedMain || '';
 
     const base = p.originalPrice ?? p.price;
     const sale = p.discount ? p.price : null;
@@ -107,6 +112,23 @@ export class ProductDetail implements OnInit {
     this.isSoldOut = (p.stock ?? 0) <= 0;
     this.selectedSize = p.sizes?.[0] ?? '';
     this.selectedColor = p.colors?.[0] ?? '';
+  }
+
+  private normalizeImagePath(path?: string): string {
+    if (!path) return '';
+    const src = path.trim();
+    if (!src) return '';
+
+    if (/^(https?:)?\/\//i.test(src) || src.startsWith('data:')) {
+      return src;
+    }
+
+    if (src.startsWith('/assets/')) return src;
+    if (src.startsWith('assets/')) return `/${src}`;
+    if (src.startsWith('/images/')) return `/assets${src}`;
+    if (src.startsWith('images/')) return `/assets/${src}`;
+
+    return `/assets/${src.replace(/^\/+/, '')}`;
   }
 
   selectImage(src: string): void { this.mainImage = src; }
@@ -120,8 +142,8 @@ export class ProductDetail implements OnInit {
       name: p.name,
       price: base,
       sale: sale && sale < base ? sale : undefined,
-      image: p.image || '',
-      images: p.images,
+      image: this.normalizeImagePath(p.image),
+      images: (p.images ?? []).map(src => this.normalizeImagePath(src)).filter(Boolean),
       category: p.category
     };
   }
@@ -139,7 +161,7 @@ export class ProductDetail implements OnInit {
       productId: this.product._id,
       productName: this.product.name,
       price: this.displayPrice,
-      image: this.product.image,
+      image: this.mainImage || this.normalizeImagePath(this.product.image),
       size: this.selectedSize || undefined,
       color: this.selectedColor || undefined,
       quantity: this.quantity
@@ -162,12 +184,12 @@ export class ProductDetail implements OnInit {
       id: this.product._id,
       name: this.product.name,
       price: this.displayPrice,
-      image: this.product.image,
+      image: this.mainImage || this.normalizeImagePath(this.product.image),
       size: this.selectedSize || null,
       color: this.selectedColor || null,
       quantity: this.quantity
     }));
-    this.toast('Proceeding to checkout…');
+    this.router.navigate(['/checkout']);
   }
 
   private toast(msg: string): void {

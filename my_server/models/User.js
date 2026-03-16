@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema({
   gender: String,
   role: { type: String, default: 'customer' },
   avatar: String,
+  image: String,
   membershipLevel: { type: String, default: 'Silver' },
   totalSpent: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },

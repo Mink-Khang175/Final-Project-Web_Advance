@@ -1,0 +1,33 @@
+<div class="chat-assistant">
+	<div class="chat-head">
+		<div>
+			<p class="chat-kicker">AVANT SUPPORT</p>
+			<h3>Talk To Our Friendly Assistant</h3>
+		</div>
+	</div>
+
+	<div class="chat-suggestions" *ngIf="messages.length <= 1">
+		<button type="button" *ngFor="let s of suggestions" (click)="useSuggestion(s)">{{ s }}</button>
+	</div>
+
+	<div class="chat-log" role="log" aria-live="polite">
+		<div class="chat-bubble" *ngFor="let m of messages" [class.user]="m.role === 'user'" [class.assistant]="m.role === 'assistant'">
+			<p>{{ m.text }}</p>
+		</div>
+
+		<div class="chat-bubble assistant pending" *ngIf="sending">
+			<p>Typing...</p>
+		</div>
+	</div>
+
+	<p class="chat-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+	<div class="chat-input-wrap">
+		<textarea
+			[(ngModel)]="input"
+			rows="2"
+			placeholder="Ask about products, sizing, returns, shipping..."
+			(keydown.enter)="$event.preventDefault(); sendMessage()"></textarea>
+		<button type="button" [disabled]="sending || !input.trim()" (click)="sendMessage()">Send</button>
+	</div>
+</div>

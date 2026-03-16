@@ -1,5 +1,5 @@
 ﻿import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
-import { CommonModule, isPlatformBrowser, SlicePipe } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { ApiService, CartItem } from '../api.service';
@@ -7,7 +7,7 @@ import { ApiService, CartItem } from '../api.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, SlicePipe],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './header.html',
   styleUrl: './header.css',
 })
