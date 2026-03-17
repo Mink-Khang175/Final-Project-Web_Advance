@@ -48,9 +48,9 @@
 
         <!-- Cart icon with dropdown -->
         <div class="cart-icon-wrap" (mouseenter)="openCart()" (mouseleave)="closeCart()">
-          <a class="cart-trigger" (click)="toggleCart($event)">
+          <a class="cart-trigger" [class.pulse]="cartPulse" (click)="toggleCart($event)">
             <i class="fas fa-shopping-bag"></i>
-            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+            <span class="cart-badge" [class.pulse]="cartPulse" *ngIf="cartCount > 0">{{ cartCount }}</span>
           </a>
 
           <!-- Cart Dropdown -->

@@ -16,20 +16,22 @@
     <div class="footer-col">
       <h4>Shop</h4>
       <ul>
-        <li><a href="/top">Tops</a></li>
-        <li><a href="/bottom">Bottoms</a></li>
-        <li><a href="/accessories">Accessories</a></li>
-        <li><a href="/#new">New Arrivals</a></li>
+        <li><a routerLink="/product-list">All Products</a></li>
+        <li><a routerLink="/product-list" [queryParams]="{ category: 'Tops' }">Tops</a></li>
+        <li><a routerLink="/product-list" [queryParams]="{ category: 'Bottom' }">Bottom</a></li>
+        <li><a routerLink="/product-list" [queryParams]="{ category: 'Accessories' }">Accessories</a></li>
+        <li><a href="/home#new-arrivals-poster" (click)="goToNewArrivals($event)">New Arrivals</a></li>
       </ul>
     </div>
 
     <div class="footer-col">
       <h4>Support</h4>
       <ul>
-        <li><a href="/#about">Contact</a></li>
-        <li><a href="/cart">Shipping & Returns</a></li>
-        <li><a href="/forgetpass">Track Order</a></li>
-        <li><a href="/profile">My Account</a></li>
+        <li><a routerLink="/profile" [queryParams]="{ tab: 'help' }">Contact</a></li>
+        <li><a routerLink="/profile" [queryParams]="{ tab: 'returns' }">Shipping & Returns</a></li>
+        <li><a routerLink="/profile" [queryParams]="{ tab: 'orders' }">Track Order</a></li>
+        <li><a routerLink="/profile" [queryParams]="{ tab: 'wishlist' }">My Wishlist</a></li>
+        <li><a routerLink="/profile">My Account</a></li>
       </ul>
     </div>
 
@@ -52,7 +54,7 @@
     <nav>
       <a href="https://policies.google.com/privacy">Privacy</a>
       <a href="https://policies.google.com/terms">Terms</a>
-      <a href="/#about">FAQ</a>
+      <a routerLink="/profile" [queryParams]="{ tab: 'help' }">FAQ</a>
     </nav>
     <span>&copy; <span>{{currentYear}}</span> Avant Atelier. All rights reserved.</span>
   </div>

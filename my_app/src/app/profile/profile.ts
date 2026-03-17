@@ -93,8 +93,10 @@ export class Profile implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       this.loadUserData();
       this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
-        if (params['tab'] === 'orders') {
-          this.setActiveMenu('orders');
+        const tab = (params['tab'] || '').toString().toLowerCase();
+        const supportedTabs = ['information', 'orders', 'returns', 'wishlist', 'alerts', 'help', 'deactivate'];
+        if (supportedTabs.includes(tab)) {
+          this.setActiveMenu(tab);
         }
       });
     }
@@ -308,6 +310,7 @@ export class Profile implements OnInit, OnDestroy {
       this.api.getWishlist(this.userId).subscribe({
         next: (list) => {
           this.wishlistItems = list || [];
+          this.syncWishlistCache(this.wishlistItems);
           this.loadingWishlist = false;
         },
         error: () => {
@@ -411,5 +414,21 @@ export class Profile implements OnInit, OnDestroy {
   isSubmittingReturn(orderId?: string): boolean {
     if (!orderId) return false;
     return this.returnSubmittingOrderIds.includes(orderId);
+  }
+
+  openWishlistProduct(wish: WishlistItem): void {
+    const productId = (wish?.productId || '').trim();
+    if (!productId) return;
+    this.router.navigate(['/product-detail'], { queryParams: { id: productId } });
+  }
+
+  private syncWishlistCache(items: WishlistItem[]): void {
+    if (!isPlatformBrowser(this.platformId) || !this.userId) return;
+    const ids = (items || [])
+      .map(item => item?.productId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+    localStorage.setItem(`wishlistProductIds:${this.userId}`, JSON.stringify(ids));
+    window.dispatchEvent(new CustomEvent('wishlist:sync'));
   }
 }

@@ -53,6 +53,9 @@ export class ProductListPage implements OnInit, OnDestroy {
       this.searchQuery = params.get('search') || '';
       this.applyFilters();
     });
+
+    this.hydrateWishlistCache();
+
     this.api.getProducts().subscribe({
       next: (apiProducts) => {
         this.products = apiProducts.map((p: any) => ({
@@ -83,6 +86,32 @@ export class ProductListPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+  }
+
+  private hydrateWishlistCache(): void {
+    const raw = localStorage.getItem('loggedInUser');
+    if (!raw) return;
+
+    let userId = '';
+    try {
+      userId = JSON.parse(raw)?._id || '';
+    } catch {
+      return;
+    }
+
+    if (!userId) return;
+
+    this.api.getWishlist(userId).subscribe({
+      next: (items) => {
+        const ids = (items || [])
+          .map(item => item?.productId)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+        localStorage.setItem(`wishlistProductIds:${userId}`, JSON.stringify(ids));
+        window.dispatchEvent(new CustomEvent('wishlist:sync'));
+      },
+      error: () => {}
+    });
   }
 
   private extractFilterOptions(apiProducts: any[]): void {
@@ -204,8 +233,11 @@ export class ProductListPage implements OnInit, OnDestroy {
       quantity: 1,
       image: product.image
     }).subscribe({
-      next: () => alert(`${product.name} added to cart!`),
-      error: () => alert(`${product.name} added to cart! (offline)`)
+      next: () => {
+        window.dispatchEvent(new Event('cart-updated'));
+        window.dispatchEvent(new Event('cart-item-added'));
+      },
+      error: () => {}
     });
   }
 }

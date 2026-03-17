@@ -31,7 +31,7 @@ const apiBaseUrl = process.env['API_BASE_URL'];
  * - If API_BASE_URL is set, proxy GET requests to that backend.
  * - Otherwise return a safe empty payload to prevent build-time failures.
  */
-app.get(/^\/api\/.*/, async (req, res) => {
+app.get('/api/{*splat}', async (req, res) => {
   if (!apiBaseUrl) {
     res.status(200).json({ success: true, data: [], count: 0, message: 'API unavailable during SSR build.' });
     return;

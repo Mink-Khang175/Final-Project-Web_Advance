@@ -183,6 +183,13 @@
                     <div style="color:#666; font-size:13px;">{{ wish.category }}</div>
                   </div>
                   <div style="font-weight:600;">{{ wish.price | currency:'USD' }}</div>
+                  <button
+                    type="button"
+                    (click)="openWishlistProduct(wish)"
+                    [disabled]="!wish.productId"
+                    style="border:1px solid #111; background:#111; color:#fff; font-size:12px; letter-spacing:.06em; text-transform:uppercase; padding:8px 12px; border-radius:6px; cursor:pointer;">
+                    View Product
+                  </button>
                 </div>
               </div>
             </div>

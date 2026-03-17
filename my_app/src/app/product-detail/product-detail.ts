@@ -175,6 +175,7 @@ export class ProductDetail implements OnInit {
       next: () => {
         if (isPlatformBrowser(this.platformId)) {
           window.dispatchEvent(new Event('cart-updated'));
+          window.dispatchEvent(new Event('cart-item-added'));
         }
       },
       error: () => this.toast('Failed to add to cart. Please try again.')

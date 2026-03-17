@@ -32,9 +32,12 @@ export class Header implements OnInit, OnDestroy {
   cartItems: CartItem[] = [];
   cartCount = 0;
   cartTotal = 0;
+  cartPulse = false;
   private cartHoverTimeout: any;
   private userId = '';
   private cartEventListener: (() => void) | null = null;
+  private cartAddedEventListener: (() => void) | null = null;
+  private cartPulseTimer: any = null;
 
   private searchDebounce: any = null;
   private sectionObserver: IntersectionObserver | null = null;
@@ -94,6 +97,11 @@ export class Header implements OnInit, OnDestroy {
       // Listen for cart update events dispatched by other components
       this.cartEventListener = () => this.loadCart();
       window.addEventListener('cart-updated', this.cartEventListener);
+      this.cartAddedEventListener = () => {
+        this.loadCart();
+        this.triggerCartPulse();
+      };
+      window.addEventListener('cart-item-added', this.cartAddedEventListener);
       // Check if we're on home page (ignore query params and fragments)
       const urlPath = this.router.url.split('?')[0].split('#')[0];
       this.isHomePage = urlPath === '/home' || urlPath === '/';
@@ -109,7 +117,22 @@ export class Header implements OnInit, OnDestroy {
     this.destroySectionObserver();
     if (this.cartHoverTimeout) clearTimeout(this.cartHoverTimeout);
     if (this.searchDebounce) clearTimeout(this.searchDebounce);
+    if (this.cartPulseTimer) clearTimeout(this.cartPulseTimer);
     if (this.cartEventListener) window.removeEventListener('cart-updated', this.cartEventListener);
+    if (this.cartAddedEventListener) window.removeEventListener('cart-item-added', this.cartAddedEventListener);
+  }
+
+  private triggerCartPulse(): void {
+    this.cartPulse = false;
+    this.cdr.detectChanges();
+    this.cartPulseTimer = setTimeout(() => {
+      this.cartPulse = true;
+      this.cdr.detectChanges();
+      this.cartPulseTimer = setTimeout(() => {
+        this.cartPulse = false;
+        this.cdr.detectChanges();
+      }, 620);
+    }, 10);
   }
 
   initSectionObserver(): void {

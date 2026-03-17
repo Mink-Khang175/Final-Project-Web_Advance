@@ -11,23 +11,24 @@
 
   <div class="content">
     <div class="text">
-      <h1>Welcome to our dimension</h1>
-      <p>If we vibe - we vibe.</p>
+      <h1 data-reveal style="--reveal-delay: 40ms;">Welcome to our dimension</h1>
+      <p data-reveal style="--reveal-delay: 180ms;">If we vibe - we vibe.</p>
     </div>
-    <a routerLink="/product-list">Shop now</a>
+    <a data-reveal style="--reveal-delay: 300ms;" routerLink="/product-list">Shop now</a>
   </div>
 </section>
 
 <section class="services stack-card" id="services">
-  <div class="new-arrivals-poster">
+  <div class="new-arrivals-poster" id="new-arrivals-poster">
     <img src="/assets/images/New Arrivals/poster.png" alt="New Arrivals">
     <a class="poster-btn btn-glass poster-btn--topleft"
+       data-reveal style="--reveal-delay: 120ms;"
        href="https://heyzine.com/flip-book/ffeef366b4.html"
        target="_blank" rel="noopener noreferrer"
        (mousemove)="onMagneticMove($event)"
        (mouseenter)="onMagneticEnter($event)"
        (mouseleave)="onMagneticLeave($event)">VISIT LOOKBOOK</a>
-    <a class="poster-btn btn-solid poster-btn--bottomright" routerLink="/product-list"
+     <a class="poster-btn btn-solid poster-btn--bottomright" data-reveal style="--reveal-delay: 260ms;" routerLink="/product-list"
        (mousemove)="onMagneticMove($event)"
        (mouseenter)="onMagneticEnter($event)"
        (mouseleave)="onMagneticLeave($event)">

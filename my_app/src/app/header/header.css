@@ -704,6 +704,10 @@ header.glass-header.on-light .dropdown li a {
   opacity: 0.7;
 }
 
+.cart-trigger.pulse {
+  animation: cartPulse 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .cart-badge {
   position: absolute;
   top: -7px;
@@ -720,6 +724,24 @@ header.glass-header.on-light .dropdown li a {
   justify-content: center;
   padding: 0 3px;
   line-height: 1;
+}
+
+.cart-badge.pulse {
+  animation: cartBadgePop 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes cartPulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.18); }
+  65% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes cartBadgePop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.22); }
+  65% { transform: scale(0.92); }
+  100% { transform: scale(1); }
 }
 
 header.glass-header.on-light .cart-trigger {

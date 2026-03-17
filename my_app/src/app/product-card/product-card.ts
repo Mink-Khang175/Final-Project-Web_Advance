@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, Inject, PLATFORM_ID, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, Inject, PLATFORM_ID, OnChanges, OnInit, OnDestroy, SimpleChanges } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService } from '../api.service';
@@ -23,13 +23,14 @@ export interface Product {
   templateUrl: './product-card.html',
   styleUrl: './product-card.css',
 })
-export class ProductCard implements OnChanges {
+export class ProductCard implements OnChanges, OnInit, OnDestroy {
   @Input() product!: Product;
   @Input() detailUrl: string = '';
   @Output() buyNow = new EventEmitter<Product>();
   @Output() addToCart = new EventEmitter<Product>();
   isWishlisted = false;
   isWishlistBusy = false;
+  private readonly wishlistSyncHandler = () => this.syncWishlistState();
 
   constructor(
     private router: Router,
@@ -41,6 +42,17 @@ export class ProductCard implements OnChanges {
     if (changes['product']) {
       this.syncWishlistState();
     }
+  }
+
+  ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    window.addEventListener('wishlist:sync', this.wishlistSyncHandler);
+    this.syncWishlistState();
+  }
+
+  ngOnDestroy(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    window.removeEventListener('wishlist:sync', this.wishlistSyncHandler);
   }
 
   onBuyNow(event: Event): void {
@@ -60,28 +72,29 @@ export class ProductCard implements OnChanges {
     event.stopPropagation();
     if (!isPlatformBrowser(this.platformId) || this.isWishlistBusy) return;
 
-    const raw = localStorage.getItem('loggedInUser');
-    if (!raw) {
+    const userId = this.getLoggedInUserId();
+    if (!userId) {
       this.router.navigate(['/auth']);
       return;
     }
 
-    const userId = JSON.parse(raw)._id;
     if (!userId || !this.product?.id) return;
 
     this.isWishlistBusy = true;
     const nextState = !this.isWishlisted;
     this.isWishlisted = nextState;
-    this.writeWishlistCache(nextState);
+    this.writeWishlistCache(userId, nextState);
 
     if (!nextState) {
       this.api.removeFromWishlist(userId, this.product.id).subscribe({
         next: () => {
+          this.dispatchWishlistSync();
           this.isWishlistBusy = false;
         },
         error: () => {
           this.isWishlisted = true;
-          this.writeWishlistCache(true);
+          this.writeWishlistCache(userId, true);
+          this.dispatchWishlistSync();
           this.isWishlistBusy = false;
         }
       });
@@ -97,11 +110,13 @@ export class ProductCard implements OnChanges {
       category: this.product.category
     }).subscribe({
       next: () => {
+        this.dispatchWishlistSync();
         this.isWishlistBusy = false;
       },
       error: () => {
         this.isWishlisted = false;
-        this.writeWishlistCache(false);
+        this.writeWishlistCache(userId, false);
+        this.dispatchWishlistSync();
         this.isWishlistBusy = false;
       }
     });
@@ -136,29 +151,62 @@ export class ProductCard implements OnChanges {
 
   private syncWishlistState(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    const ids = this.getWishlistCache();
+    const userId = this.getLoggedInUserId();
+    if (!userId) {
+      this.isWishlisted = false;
+      return;
+    }
+    const ids = this.getWishlistCache(userId);
     this.isWishlisted = !!this.product?.id && ids.includes(this.product.id);
   }
 
-  private writeWishlistCache(isAdd: boolean): void {
+  private writeWishlistCache(userId: string, isAdd: boolean): void {
     if (!isPlatformBrowser(this.platformId) || !this.product?.id) return;
-    const ids = this.getWishlistCache();
+    const ids = this.getWishlistCache(userId);
     const has = ids.includes(this.product.id);
     let next = ids;
     if (isAdd && !has) next = [...ids, this.product.id];
     if (!isAdd && has) next = ids.filter(id => id !== this.product.id);
-    localStorage.setItem('wishlistProductIds', JSON.stringify(next));
+    localStorage.setItem(this.getWishlistCacheKey(userId), JSON.stringify(next));
   }
 
-  private getWishlistCache(): string[] {
+  private getWishlistCache(userId: string): string[] {
     if (!isPlatformBrowser(this.platformId)) return [];
-    const raw = localStorage.getItem('wishlistProductIds');
-    if (!raw) return [];
+    const key = this.getWishlistCacheKey(userId);
+    const raw = localStorage.getItem(key);
+    // Backward compatibility for old shared key.
+    const fallbackRaw = !raw ? localStorage.getItem('wishlistProductIds') : null;
+    const source = raw || fallbackRaw;
+    if (!source) return [];
     try {
-      const ids = JSON.parse(raw);
+      const ids = JSON.parse(source);
+      if (fallbackRaw && Array.isArray(ids)) {
+        localStorage.setItem(key, JSON.stringify(ids));
+        localStorage.removeItem('wishlistProductIds');
+      }
       return Array.isArray(ids) ? ids : [];
     } catch {
       return [];
     }
+  }
+
+  private getLoggedInUserId(): string {
+    if (!isPlatformBrowser(this.platformId)) return '';
+    const raw = localStorage.getItem('loggedInUser');
+    if (!raw) return '';
+    try {
+      return JSON.parse(raw)?._id || '';
+    } catch {
+      return '';
+    }
+  }
+
+  private getWishlistCacheKey(userId: string): string {
+    return `wishlistProductIds:${userId}`;
+  }
+
+  private dispatchWishlistSync(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    window.dispatchEvent(new CustomEvent('wishlist:sync'));
   }
 }

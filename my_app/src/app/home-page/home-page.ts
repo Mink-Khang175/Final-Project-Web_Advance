@@ -28,6 +28,8 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
   slides: NodeListOf<Element> | null = null;
   slider: HTMLElement | null = null;
   slideInterval: any;
+  private sliderInitAttempts = 0;
+  private readonly maxSliderInitAttempts = 10;
 
   // Slide typewriter
   slideQuoteText = '';
@@ -52,6 +54,7 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
 
   aboutVisible = false;
   typedText = '';
+  private aboutTypewriterStarted = false;
   private typewriterInterval: any;
   private typewriterTimeout: any;
 
@@ -59,6 +62,7 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild('stackContainer', { static: false }) stackContainer!: ElementRef;
   private stackScrollHandler: (() => void) | null = null;
+  private activeStackCardId = '';
   private aboutObserver: IntersectionObserver | null = null;
 
   constructor(
@@ -89,12 +93,16 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
       if (fragment) {
         setTimeout(() => {
           const container = this.stackContainer?.nativeElement as HTMLElement | undefined;
-          const section = document.getElementById(fragment);
-          if (!container || !section) return;
+          const target = document.getElementById(fragment);
+          if (!container || !target) return;
+
+          const targetSection = target.closest('section[id]') as HTMLElement | null;
+          const targetSectionId = targetSection?.id || target.id;
+
           const allSections = Array.from(container.querySelectorAll<HTMLElement>('section[id]'));
           let offset = 0;
           for (const s of allSections) {
-            if (s.id === fragment) break;
+            if (s.id === targetSectionId) break;
             offset += s.scrollHeight || s.offsetHeight;
           }
           container.scrollTo({ top: offset, behavior: 'smooth' });
@@ -174,13 +182,22 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   initSlider(): void {
-    setTimeout(() => {
-      this.slides = document.querySelectorAll('.slide');
-      this.slider = document.querySelector('.slider');
-      if (this.slides && this.slider) {
-        this.startSlideTypewriter();
-      }
-    }, 400);
+    setTimeout(() => this.tryInitSlider(), 300);
+  }
+
+  private tryInitSlider(): void {
+    this.sliderInitAttempts += 1;
+    this.slides = document.querySelectorAll('.slide');
+    this.slider = document.querySelector('.slider');
+
+    if (this.slides?.length && this.slider) {
+      this.startSlideTypewriter();
+      return;
+    }
+
+    if (this.sliderInitAttempts < this.maxSliderInitAttempts) {
+      setTimeout(() => this.tryInitSlider(), 200);
+    }
   }
 
   private startSlideTypewriter(): void {
@@ -244,9 +261,7 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
     this.aboutObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting && !this.aboutVisible) {
-          this.aboutVisible = true;
-          this.startTypewriter();
-          this.cdr.detectChanges();
+          this.revealAboutContent();
           this.aboutObserver?.disconnect();
         }
       });
@@ -290,31 +305,77 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
       const viewHeight = container.clientHeight;
       const cards = container.querySelectorAll('.stack-card') as NodeListOf<HTMLElement>;
 
+      if (!this.aboutVisible && scrollTop + viewHeight >= container.scrollHeight - viewHeight * 0.9) {
+        this.revealAboutContent();
+      }
+
       cards.forEach((card: HTMLElement) => {
         const naturalTop = card.offsetTop;
         const coverProgress = (scrollTop - naturalTop) / viewHeight;
 
         if (coverProgress > 0.05 && coverProgress < 1.5) {
           // Being covered - fade out smoothly
+          const depth = Math.min(Math.max(coverProgress, 0), 1);
           const opacity = Math.max(0, 1 - coverProgress * 0.85);
+          const scale = 1 - depth * 0.04;
+          const translateY = -depth * 18;
+          const blur = depth * 3;
           card.style.opacity = String(opacity);
+          card.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
+          card.style.filter = `blur(${blur}px) saturate(${1 - depth * 0.18})`;
           // Disable pointer events when fading out to allow scroll through
           card.style.pointerEvents = opacity < 0.3 ? 'none' : 'auto';
         } else if (coverProgress >= 1.5) {
           // Fully covered
           card.style.opacity = '0';
+          card.style.transform = 'translate3d(0, -24px, 0) scale(0.95)';
+          card.style.filter = 'blur(4px) saturate(0.82)';
           card.style.pointerEvents = 'none';
         } else {
           // Visible / not yet reached
           card.style.opacity = '1';
+          card.style.transform = '';
+          card.style.filter = '';
           card.style.pointerEvents = 'auto';
         }
       });
+
+      this.updateActiveStackCard(cards, scrollTop);
     };
 
     container.addEventListener('scroll', this.stackScrollHandler, { passive: true });
     // Run once immediately to set initial state
     this.stackScrollHandler();
+  }
+
+  private updateActiveStackCard(cards: NodeListOf<HTMLElement>, scrollTop: number): void {
+    if (!cards.length) return;
+
+    let activeCard = cards[0];
+    let minDistance = Number.POSITIVE_INFINITY;
+
+    cards.forEach(card => {
+      const distance = Math.abs(card.offsetTop - scrollTop);
+      if (distance < minDistance) {
+        minDistance = distance;
+        activeCard = card;
+      }
+    });
+
+    if (!activeCard.id || activeCard.id === this.activeStackCardId) return;
+    this.activeStackCardId = activeCard.id;
+
+    cards.forEach(card => card.classList.remove('is-current'));
+    activeCard.classList.add('is-current');
+  }
+
+  private revealAboutContent(): void {
+    this.aboutVisible = true;
+    if (!this.aboutTypewriterStarted) {
+      this.aboutTypewriterStarted = true;
+      this.startTypewriter();
+    }
+    this.cdr.detectChanges();
   }
 
   destroyStackFade(): void {
@@ -394,8 +455,11 @@ export class HomePage implements OnInit, OnDestroy, AfterViewInit {
       quantity: 1,
       image: product.image
     }).subscribe({
-      next: () => alert(`${product.name} added to cart!`),
-      error: () => alert(`${product.name} added to cart! (offline)`)
+      next: () => {
+        window.dispatchEvent(new Event('cart-updated'));
+        window.dispatchEvent(new Event('cart-item-added'));
+      },
+      error: () => {}
     });
   }
 
