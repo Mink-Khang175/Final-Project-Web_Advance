@@ -57,3 +57,55 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Deploy to Vercel (Frontend + Backend)
+
+This project should be deployed as 2 Vercel projects:
+
+1. `my_server` (Express API)
+2. `my_app` (Angular frontend)
+
+### 1) Deploy backend (`my_server`)
+
+```bash
+cd ../my_server
+vercel
+```
+
+Set these environment variables in Vercel project settings:
+
+- `MONGODB_URI`
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` (optional, default: `gemini-2.0-flash`)
+- `GEMINI_API_VERSION` (optional, default: `v1beta`)
+- `GEMINI_TIMEOUT_MS` (optional, default: `20000`)
+
+After deploy, copy your backend domain, for example:
+
+`https://my-server-abc.vercel.app`
+
+### 2) Update frontend rewrite (`my_app/vercel.json`)
+
+Replace this placeholder:
+
+`https://YOUR-BACKEND-PROJECT.vercel.app`
+
+with your real backend domain from step 1.
+
+### 3) Deploy frontend (`my_app`)
+
+```bash
+cd ../my_app
+vercel
+```
+
+For production deploy:
+
+```bash
+vercel --prod
+```
+
+### Notes
+
+- Frontend rewrites `/api/*` to backend Vercel URL.
+- Backend is configured to run both locally and on Vercel serverless.

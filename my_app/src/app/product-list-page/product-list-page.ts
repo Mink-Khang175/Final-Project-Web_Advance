@@ -42,6 +42,11 @@ export class ProductListPage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      this.isLoading = false;
+      return;
+    }
+
     // Subscribe to query param changes (category, search) so URL stays in sync
     this.routeSub = this.route.queryParamMap.subscribe(params => {
       this.selectedCategory = params.get('category') || null;

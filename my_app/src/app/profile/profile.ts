@@ -1,7 +1,8 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, DestroyRef, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Header } from '../header/header';
 import { Footer } from '../footer/footer';
 import { MembershipCard } from '../membership-card/membership-card';
@@ -29,7 +30,8 @@ interface UserInfo {
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
-export class Profile implements OnInit {
+export class Profile implements OnInit, OnDestroy {
+  private destroyRef = inject(DestroyRef);
   // User Data
   userName = 'JOHN DOE';
   userEmail = 'john.doe@example.com';
@@ -69,9 +71,13 @@ export class Profile implements OnInit {
   loadingOrders = false;
   returnRequests: ReturnRequest[] = [];
   loadingReturns = false;
+  returnReasonByOrderId: Record<string, string> = {};
+  returnPanelOpenByOrderId: Record<string, boolean> = {};
+  orderNotice: { type: 'success' | 'error'; text: string } | null = null;
   wishlistItems: WishlistItem[] = [];
   loadingWishlist = false;
   returnSubmittingOrderIds: string[] = [];
+  private orderNoticeTimer: any = null;
 
   // Logged in user ID from MongoDB
   userId = '';
@@ -86,11 +92,18 @@ export class Profile implements OnInit {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.loadUserData();
-      this.route.queryParams.subscribe(params => {
+      this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
         if (params['tab'] === 'orders') {
           this.setActiveMenu('orders');
         }
       });
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.orderNoticeTimer) {
+      clearTimeout(this.orderNoticeTimer);
+      this.orderNoticeTimer = null;
     }
   }
   
@@ -115,6 +128,7 @@ export class Profile implements OnInit {
       this.userName = this.userInfo.fullName;
       this.userEmail = this.userInfo.email;
       this.memberStatus = userData.membershipLevel || 'Silver';
+      this.userPhoto = userData.image || userData.avatar || '';
 
       // Load fresh data from backend
       if (this.userId) {
@@ -133,7 +147,15 @@ export class Profile implements OnInit {
             this.userName = user.name;
             this.userEmail = user.email;
             this.memberStatus = user.membershipLevel || 'Silver';
-            this.userPhoto = user.image || user.avatar || '';
+            const latestPhoto = user.image || user.avatar || userData.image || userData.avatar || this.userPhoto || '';
+            this.userPhoto = latestPhoto;
+            const merged = {
+              ...userData,
+              ...user,
+              image: user.image || userData.image || user.avatar || userData.avatar || '',
+              avatar: user.avatar || userData.avatar || user.image || userData.image || ''
+            };
+            localStorage.setItem('loggedInUser', JSON.stringify(merged));
           },
           error: () => {} // Use cached data
         });
@@ -177,21 +199,53 @@ export class Profile implements OnInit {
           gender: this.userInfo.gender
         }).subscribe({
           next: (updatedUser) => {
-            localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
+            const existingRaw = localStorage.getItem('loggedInUser');
+            const existing = existingRaw ? JSON.parse(existingRaw) : {};
+            localStorage.setItem('loggedInUser', JSON.stringify({ ...existing, ...updatedUser }));
             this.isEditMode = false;
             this.tempUserInfo = null;
             alert('Your information has been updated successfully!');
           },
           error: () => {
             // Fallback: save locally
-            localStorage.setItem('loggedInUser', JSON.stringify(this.userInfo));
+            const existingRaw = localStorage.getItem('loggedInUser');
+            const existing = existingRaw ? JSON.parse(existingRaw) : {};
+            localStorage.setItem('loggedInUser', JSON.stringify({
+              ...existing,
+              name: this.userInfo.fullName,
+              fullName: this.userInfo.fullName,
+              email: this.userInfo.email,
+              password: this.userInfo.password,
+              phone: this.userInfo.phone,
+              address: this.userInfo.address,
+              city: this.userInfo.city,
+              postalCode: this.userInfo.postalCode,
+              country: this.userInfo.country,
+              dateOfBirth: this.userInfo.dateOfBirth,
+              gender: this.userInfo.gender
+            }));
             this.isEditMode = false;
             this.tempUserInfo = null;
             alert('Saved locally (server unavailable).');
           }
         });
       } else {
-        localStorage.setItem('loggedInUser', JSON.stringify(this.userInfo));
+        const existingRaw = localStorage.getItem('loggedInUser');
+        const existing = existingRaw ? JSON.parse(existingRaw) : {};
+        localStorage.setItem('loggedInUser', JSON.stringify({
+          ...existing,
+          name: this.userInfo.fullName,
+          fullName: this.userInfo.fullName,
+          email: this.userInfo.email,
+          password: this.userInfo.password,
+          phone: this.userInfo.phone,
+          address: this.userInfo.address,
+          city: this.userInfo.city,
+          postalCode: this.userInfo.postalCode,
+          country: this.userInfo.country,
+          dateOfBirth: this.userInfo.dateOfBirth,
+          gender: this.userInfo.gender
+        }));
         this.isEditMode = false;
         this.tempUserInfo = null;
       }
@@ -209,6 +263,7 @@ export class Profile implements OnInit {
     if (saved) {
       const userData = JSON.parse(saved);
       userData.image = imageBase64;
+      userData.avatar = imageBase64;
       localStorage.setItem('loggedInUser', JSON.stringify(userData));
     }
   }
@@ -238,7 +293,7 @@ export class Profile implements OnInit {
       this.loadingReturns = true;
       this.api.getReturnsByUser(this.userId).subscribe({
         next: (list) => {
-          this.returnRequests = list || [];
+          this.returnRequests = (list || []).filter(r => (r.status || '').toLowerCase() === 'approved');
           this.loadingReturns = false;
         },
         error: () => {
@@ -298,30 +353,59 @@ export class Profile implements OnInit {
   requestReturn(order: ApiOrder): void {
     if (!this.userId || !order._id || this.returnSubmittingOrderIds.includes(order._id)) return;
 
+    const reason = (this.returnReasonByOrderId[order._id] || '').trim();
+    if (!reason) {
+      this.showOrderNotice('error', 'Please enter a return reason before submitting.');
+      return;
+    }
+
     this.returnSubmittingOrderIds.push(order._id);
     this.api.createReturn({
       userId: this.userId,
       orderId: order._id,
       orderNumber: order.orderNumber,
-      reason: 'Customer requested return',
+      reason,
       totalAmount: order.totalAmount,
       items: order.items
     }).subscribe({
       next: () => {
         this.orders = this.orders.map(o => o._id === order._id ? { ...o, status: 'return_requested' } : o);
-        alert(`Return requested for order #${order.orderNumber}`);
+        this.returnReasonByOrderId[order._id!] = '';
+        this.returnPanelOpenByOrderId[order._id!] = false;
+        this.showOrderNotice('success', `Return request sent successfully for order #${order.orderNumber}. Waiting for admin approval.`);
         this.returnSubmittingOrderIds = this.returnSubmittingOrderIds.filter(id => id !== order._id);
       },
       error: (err) => {
-        alert(err?.error?.message || 'Unable to request return for this order.');
+        this.showOrderNotice('error', err?.error?.message || 'Unable to request return for this order.');
         this.returnSubmittingOrderIds = this.returnSubmittingOrderIds.filter(id => id !== order._id);
       }
     });
   }
 
+  private showOrderNotice(type: 'success' | 'error', text: string): void {
+    this.orderNotice = { type, text };
+    if (this.orderNoticeTimer) {
+      clearTimeout(this.orderNoticeTimer);
+    }
+    this.orderNoticeTimer = setTimeout(() => {
+      this.orderNotice = null;
+      this.orderNoticeTimer = null;
+    }, 4000);
+  }
+
   canRequestReturn(order: ApiOrder): boolean {
     const status = (order.status || '').toLowerCase();
     return !['return_requested', 'returned', 'cancelled'].includes(status);
+  }
+
+  toggleReturnPanel(orderId?: string): void {
+    if (!orderId) return;
+    this.returnPanelOpenByOrderId[orderId] = !this.returnPanelOpenByOrderId[orderId];
+  }
+
+  isReturnPanelOpen(orderId?: string): boolean {
+    if (!orderId) return false;
+    return !!this.returnPanelOpenByOrderId[orderId];
   }
 
   isSubmittingReturn(orderId?: string): boolean {

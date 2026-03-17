@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, shareReplay, tap } from 'rxjs/operators';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -31,6 +31,16 @@ export interface User {
   totalSpent?: number;
   isActive?: boolean;
   createdAt?: string;
+}
+
+export interface AdminAccount {
+  _id: string;
+  email: string;
+  name: string;
+  role: 'admin';
+  accountType: 'admin';
+  permissions?: string[];
+  lastLoginAt?: string;
 }
 
 // ── Product ──
@@ -116,6 +126,8 @@ export interface ReturnRequest {
   orderNumber: string;
   reason?: string;
   status?: string;
+  adminNote?: string;
+  reviewedAt?: string;
   items?: OrderItem[];
   totalAmount?: number;
   createdAt?: string;
@@ -129,8 +141,28 @@ export interface ChatMessage {
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private base = '/api';
+  private productsCache$: Observable<Product[]> | null = null;
+  private usersCache$: Observable<User[]> | null = null;
+  private ordersCache$: Observable<Order[]> | null = null;
+  private returnsCache$: Observable<ReturnRequest[]> | null = null;
 
   constructor(private http: HttpClient) {}
+
+  private invalidateProductsCache(): void {
+    this.productsCache$ = null;
+  }
+
+  private invalidateUsersCache(): void {
+    this.usersCache$ = null;
+  }
+
+  private invalidateOrdersCache(): void {
+    this.ordersCache$ = null;
+  }
+
+  private invalidateReturnsCache(): void {
+    this.returnsCache$ = null;
+  }
 
   private handleError(err: any): Observable<never> {
     let message = 'Something went wrong. Please try again.';
@@ -166,8 +198,25 @@ export class ApiService {
     );
   }
 
+  loginAdmin(email: string, password: string): Observable<AdminAccount> {
+    return this.http.post<ApiResponse<AdminAccount>>(`${this.base}/admin/login`, { email, password }).pipe(
+      map(r => r.data),
+      catchError(err => this.handleError(err))
+    );
+  }
+
   getUsers(): Observable<User[]> {
-    return this.http.get<ApiResponse<User[]>>(`${this.base}/users`).pipe(map(r => r.data));
+    if (!this.usersCache$) {
+      this.usersCache$ = this.http.get<ApiResponse<User[]>>(`${this.base}/users`).pipe(
+        map(r => r.data),
+        shareReplay(1),
+        catchError((err) => {
+          this.invalidateUsersCache();
+          return this.handleError(err);
+        })
+      );
+    }
+    return this.usersCache$;
   }
 
   getUser(id: string): Observable<User> {
@@ -175,16 +224,32 @@ export class ApiService {
   }
 
   updateUser(id: string, data: Partial<User>): Observable<User> {
-    return this.http.put<ApiResponse<User>>(`${this.base}/users/${id}`, data).pipe(map(r => r.data));
+    return this.http.put<ApiResponse<User>>(`${this.base}/users/${id}`, data).pipe(
+      map(r => r.data),
+      tap(() => this.invalidateUsersCache())
+    );
   }
 
   deleteUser(id: string): Observable<any> {
-    return this.http.delete<ApiResponse<any>>(`${this.base}/users/${id}`);
+    return this.http.delete<ApiResponse<any>>(`${this.base}/users/${id}`).pipe(
+      tap(() => this.invalidateUsersCache())
+    );
   }
 
   // ────────────── PRODUCT ──────────────
   getProducts(): Observable<Product[]> {
-    return this.http.get<ApiResponse<Product[]>>(`${this.base}/products`).pipe(map(r => r.data));
+    if (!this.productsCache$) {
+      this.productsCache$ = this.http.get<ApiResponse<Product[]>>(`${this.base}/products`).pipe(
+        map(r => r.data),
+        // Reuse one in-flight/result stream across pages to avoid duplicate requests.
+        shareReplay(1),
+        catchError((err) => {
+          this.invalidateProductsCache();
+          return this.handleError(err);
+        })
+      );
+    }
+    return this.productsCache$;
   }
 
   getProduct(id: string): Observable<Product> {
@@ -200,15 +265,23 @@ export class ApiService {
   }
 
   createProduct(data: Partial<Product>): Observable<Product> {
-    return this.http.post<ApiResponse<Product>>(`${this.base}/products`, data).pipe(map(r => r.data));
+    return this.http.post<ApiResponse<Product>>(`${this.base}/products`, data).pipe(
+      map(r => r.data),
+      tap(() => this.invalidateProductsCache())
+    );
   }
 
   updateProduct(id: string, data: Partial<Product>): Observable<Product> {
-    return this.http.put<ApiResponse<Product>>(`${this.base}/products/${id}`, data).pipe(map(r => r.data));
+    return this.http.put<ApiResponse<Product>>(`${this.base}/products/${id}`, data).pipe(
+      map(r => r.data),
+      tap(() => this.invalidateProductsCache())
+    );
   }
 
   deleteProduct(id: string): Observable<any> {
-    return this.http.delete<ApiResponse<any>>(`${this.base}/products/${id}`);
+    return this.http.delete<ApiResponse<any>>(`${this.base}/products/${id}`).pipe(
+      tap(() => this.invalidateProductsCache())
+    );
   }
 
   // ────────────── CART ──────────────
@@ -234,7 +307,17 @@ export class ApiService {
 
   // ────────────── ORDER ──────────────
   getOrders(): Observable<Order[]> {
-    return this.http.get<ApiResponse<Order[]>>(`${this.base}/orders`).pipe(map(r => r.data));
+    if (!this.ordersCache$) {
+      this.ordersCache$ = this.http.get<ApiResponse<Order[]>>(`${this.base}/orders`).pipe(
+        map(r => r.data),
+        shareReplay(1),
+        catchError((err) => {
+          this.invalidateOrdersCache();
+          return this.handleError(err);
+        })
+      );
+    }
+    return this.ordersCache$;
   }
 
   getOrdersByUser(userId: string): Observable<Order[]> {
@@ -242,15 +325,23 @@ export class ApiService {
   }
 
   createOrder(data: Partial<Order>): Observable<Order> {
-    return this.http.post<ApiResponse<Order>>(`${this.base}/orders`, data).pipe(map(r => r.data));
+    return this.http.post<ApiResponse<Order>>(`${this.base}/orders`, data).pipe(
+      map(r => r.data),
+      tap(() => this.invalidateOrdersCache())
+    );
   }
 
   updateOrder(id: string, data: Partial<Order>): Observable<Order> {
-    return this.http.put<ApiResponse<Order>>(`${this.base}/orders/${id}`, data).pipe(map(r => r.data));
+    return this.http.put<ApiResponse<Order>>(`${this.base}/orders/${id}`, data).pipe(
+      map(r => r.data),
+      tap(() => this.invalidateOrdersCache())
+    );
   }
 
   deleteOrder(id: string): Observable<any> {
-    return this.http.delete<ApiResponse<any>>(`${this.base}/orders/${id}`);
+    return this.http.delete<ApiResponse<any>>(`${this.base}/orders/${id}`).pipe(
+      tap(() => this.invalidateOrdersCache())
+    );
   }
 
   // ────────────── WISHLIST ──────────────
@@ -271,8 +362,41 @@ export class ApiService {
     return this.http.get<ApiResponse<ReturnRequest[]>>(`${this.base}/returns/user/${userId}`).pipe(map(r => r.data));
   }
 
+  getReturns(): Observable<ReturnRequest[]> {
+    if (!this.returnsCache$) {
+      this.returnsCache$ = this.http.get<ApiResponse<ReturnRequest[]>>(`${this.base}/returns`).pipe(
+        map(r => r.data),
+        shareReplay(1),
+        catchError((err) => {
+          this.invalidateReturnsCache();
+          return this.handleError(err);
+        })
+      );
+    }
+    return this.returnsCache$;
+  }
+
   createReturn(data: Partial<ReturnRequest>): Observable<ReturnRequest> {
-    return this.http.post<ApiResponse<ReturnRequest>>(`${this.base}/returns`, data).pipe(map(r => r.data));
+    return this.http.post<ApiResponse<ReturnRequest>>(`${this.base}/returns`, data).pipe(
+      map(r => r.data),
+      tap(() => {
+        this.invalidateReturnsCache();
+        this.invalidateOrdersCache();
+      })
+    );
+  }
+
+  decideReturn(id: string, approved: boolean, adminNote?: string): Observable<ReturnRequest> {
+    return this.http.put<ApiResponse<ReturnRequest>>(`${this.base}/returns/${id}/decision`, {
+      approved,
+      adminNote
+    }).pipe(
+      map(r => r.data),
+      tap(() => {
+        this.invalidateReturnsCache();
+        this.invalidateOrdersCache();
+      })
+    );
   }
 
   // ────────────── AI CHAT ──────────────

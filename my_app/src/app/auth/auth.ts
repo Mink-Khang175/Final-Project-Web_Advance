@@ -131,13 +131,21 @@ export class Auth {
 
     if (!this.validateLoginForm()) return;
 
-    this.api.login(this.loginEmail, this.loginPassword).subscribe({
-      next: (user) => {
-        localStorage.setItem('loggedInUser', JSON.stringify(user));
-        this.router.navigate(['/profile']);
+    this.api.loginAdmin(this.loginEmail, this.loginPassword).subscribe({
+      next: (admin) => {
+        localStorage.setItem('loggedInUser', JSON.stringify(admin));
+        this.router.navigate(['/admin']);
       },
-      error: (err) => {
-        this.errorMessage = err.error?.message || 'Invalid email or password';
+      error: () => {
+        this.api.login(this.loginEmail, this.loginPassword).subscribe({
+          next: (user) => {
+            localStorage.setItem('loggedInUser', JSON.stringify(user));
+            this.router.navigate(['/profile']);
+          },
+          error: (err) => {
+            this.errorMessage = err.error?.message || 'Invalid email or password';
+          }
+        });
       }
     });
   }

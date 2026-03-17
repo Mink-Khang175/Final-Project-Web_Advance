@@ -12,7 +12,7 @@ import { ApiService } from '../api.service';
   styleUrl: './admin-page.css',
 })
 export class AdminPage implements OnInit {
-  activeTab: 'dashboard' | 'products' | 'orders' | 'users' | 'sales' | 'inventory' = 'dashboard';
+  activeTab: 'dashboard' | 'products' | 'orders' | 'returns' | 'users' | 'sales' | 'inventory' = 'dashboard';
 
   // ---- Products ----
   products: any[] = [];
@@ -38,6 +38,12 @@ export class AdminPage implements OnInit {
   users: any[] = [];
   usersLoading = false;
 
+  // ---- Returns ----
+  returns: any[] = [];
+  returnsLoading = false;
+  decidingReturnId: string | null = null;
+  private returnsRefreshTimer: any = null;
+
   // ---- Sales Report ----
   salesPeriod: 'week' | 'month' | 'year' = 'month';
 
@@ -55,13 +61,50 @@ export class AdminPage implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const raw = localStorage.getItem('loggedInUser');
+    const current = raw ? JSON.parse(raw) : null;
+    const isAdmin = current?.role === 'admin' || current?.accountType === 'admin';
+    if (!isAdmin) {
+      this.router.navigate(['/auth']);
+      return;
+    }
     this._loadAll();
+    this.startReturnsAutoRefresh();
+  }
+
+  ngOnDestroy(): void {
+    if (this.returnsRefreshTimer) {
+      clearInterval(this.returnsRefreshTimer);
+      this.returnsRefreshTimer = null;
+    }
+  }
+
+  loadReturns(showLoader = true): void {
+    if (showLoader || this.returns.length === 0) {
+      this.returnsLoading = true;
+    }
+    this.api.getReturns().subscribe({
+      next: (data) => {
+        this.returns = data;
+        this.returnsLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.returnsLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private _loadAll(): void {
     this.productLoading = true;
     this.ordersLoading = true;
     this.usersLoading = true;
+    this.returnsLoading = true;
     this.api.getProducts().subscribe({
       next: (data) => { this.products = data; this.productLoading = false; this.cdr.detectChanges(); },
       error: () => { this.productLoading = false; this.cdr.detectChanges(); }
@@ -74,6 +117,7 @@ export class AdminPage implements OnInit {
       next: (data) => { this.users = data; this.usersLoading = false; this.cdr.detectChanges(); },
       error: () => { this.usersLoading = false; this.cdr.detectChanges(); }
     });
+    this.loadReturns();
   }
 
   // ============ Products ============
@@ -175,8 +219,80 @@ export class AdminPage implements OnInit {
   }
 
   // ============ Tabs ============
-  setTab(tab: 'dashboard' | 'products' | 'orders' | 'users' | 'sales' | 'inventory'): void {
+  setTab(tab: 'dashboard' | 'products' | 'orders' | 'returns' | 'users' | 'sales' | 'inventory'): void {
     this.activeTab = tab;
+    if (tab === 'returns') {
+      this.loadReturns(this.returns.length === 0);
+    }
+  }
+
+  private startReturnsAutoRefresh(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.returnsRefreshTimer) {
+      clearInterval(this.returnsRefreshTimer);
+    }
+    this.returnsRefreshTimer = setInterval(() => {
+      if (this.activeTab === 'returns' && !this.decidingReturnId) {
+        this.loadReturns(false);
+      }
+    }, 7000);
+  }
+
+  approveReturn(ret: any): void {
+    if (!ret?._id || this.decidingReturnId) return;
+    const adminNote = prompt('Optional approval note for customer:', '') || '';
+    const prev = { ...ret };
+    const reviewedAt = new Date().toISOString();
+    this.returns = this.returns.map(r => r._id === ret._id ? { ...r, status: 'approved', adminNote, reviewedAt } : r);
+    this.orders = this.orders.map(o => o._id === ret.orderId ? { ...o, status: 'returned' } : o);
+    this.decidingReturnId = ret._id;
+    this.api.decideReturn(ret._id, true, adminNote).subscribe({
+      next: (updated) => {
+        this.returns = this.returns.map(r => r._id === updated._id ? updated : r);
+        this.orders = this.orders.map(o => o._id === updated.orderId ? { ...o, status: 'returned' } : o);
+        this.decidingReturnId = null;
+        this.loadReturns();
+        this.cdr.detectChanges();
+      },
+      error: (e) => {
+        this.returns = this.returns.map(r => r._id === prev._id ? prev : r);
+        this.decidingReturnId = null;
+        alert(e?.error?.message || 'Failed to approve return');
+      }
+    });
+  }
+
+  rejectReturn(ret: any): void {
+    if (!ret?._id || this.decidingReturnId) return;
+    const adminNote = prompt('Reason for rejection (required):', '') || '';
+    if (!adminNote.trim()) {
+      alert('Please enter a rejection reason.');
+      return;
+    }
+    const prev = { ...ret };
+    const reviewedAt = new Date().toISOString();
+    this.returns = this.returns.map(r => r._id === ret._id ? { ...r, status: 'rejected', adminNote: adminNote.trim(), reviewedAt } : r);
+    this.orders = this.orders.map(o => o._id === ret.orderId ? { ...o, status: 'completed' } : o);
+    this.decidingReturnId = ret._id;
+    this.api.decideReturn(ret._id, false, adminNote.trim()).subscribe({
+      next: (updated) => {
+        this.returns = this.returns.map(r => r._id === updated._id ? updated : r);
+        this.orders = this.orders.map(o => o._id === updated.orderId ? { ...o, status: 'completed' } : o);
+        this.decidingReturnId = null;
+        this.loadReturns();
+        this.cdr.detectChanges();
+      },
+      error: (e) => {
+        this.returns = this.returns.map(r => r._id === prev._id ? prev : r);
+        this.decidingReturnId = null;
+        alert(e?.error?.message || 'Failed to reject return');
+      }
+    });
+  }
+
+  canDecideReturn(ret: any): boolean {
+    const status = (ret?.status || '').toLowerCase();
+    return status === 'requested';
   }
 
   private emptyForm() {
@@ -188,7 +304,17 @@ export class AdminPage implements OnInit {
   }
 
   getStatusClass(status: string): string {
-    const map: any = { pending: 'status-pending', processing: 'status-processing', completed: 'status-completed', cancelled: 'status-cancelled' };
+    const map: any = {
+      pending: 'status-pending',
+      processing: 'status-processing',
+      completed: 'status-completed',
+      cancelled: 'status-cancelled',
+      requested: 'status-pending',
+      approved: 'status-completed',
+      rejected: 'status-cancelled',
+      return_requested: 'status-pending',
+      returned: 'status-completed'
+    };
     return map[status] || '';
   }
 

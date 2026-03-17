@@ -15,6 +15,8 @@ const returnsSchema = new mongoose.Schema({
   orderNumber: { type: String, required: true },
   reason: { type: String, default: 'Customer requested return' },
   status: { type: String, default: 'requested' },
+  adminNote: { type: String, default: '' },
+  reviewedAt: { type: Date },
   totalAmount: Number,
   items: [returnItemSchema],
   createdAt: { type: Date, default: Date.now }

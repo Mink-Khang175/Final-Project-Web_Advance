@@ -10,6 +10,49 @@ const CHAT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const GEMINI_API_VERSION = process.env.GEMINI_API_VERSION || 'v1beta';
 const CHAT_REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 20000);
 
+function mapAssistantError(errorMessage) {
+  const raw = String(errorMessage || 'Assistant is temporarily unavailable.');
+  const normalized = raw.toLowerCase();
+
+  if (normalized.includes('quota exceeded') || normalized.includes('rate limit')) {
+    return {
+      status: 429,
+      message: 'AI service is temporarily busy or quota is exhausted. Please retry in a minute or check Gemini billing/quota.'
+    };
+  }
+
+  if (normalized.includes('api key') && normalized.includes('invalid')) {
+    return {
+      status: 401,
+      message: 'Gemini API key is invalid. Please verify GEMINI_API_KEY in backend environment.'
+    };
+  }
+
+  return {
+    status: 500,
+    message: raw
+  };
+}
+
+function buildLocalAssistantFallback(message, userName) {
+  const text = String(message || '').toLowerCase();
+  const name = userName || 'customer';
+
+  if (text.includes('return') || text.includes('đổi trả') || text.includes('trả hàng')) {
+    return `Hi ${name}, our return flow is: submit a return request from your order, include the reason, then wait for admin approval. Only approved requests appear in My Returns. Next step: open Profile > My Orders > Start Return Request.`;
+  }
+
+  if (text.includes('size') || text.includes('fit') || text.includes('kích cỡ')) {
+    return `Hi ${name}, for sizing I recommend choosing your usual size first, then checking product-specific fit notes (regular/relaxed/slim). If you share your height, weight, and preferred fit, I can suggest a more precise size.`;
+  }
+
+  if (text.includes('ship') || text.includes('delivery') || text.includes('giao hàng')) {
+    return `Hi ${name}, shipping time depends on your location and order status. Please check your latest order in My Orders for current progress. If you want, I can help you draft a quick support message with your order number.`;
+  }
+
+  return `Hi ${name}, Ava is temporarily in backup mode, but I can still help with returns, sizing, order tracking, and product suggestions. Tell me what you need and I will guide you step by step.`;
+}
+
 async function callGenerateContent(apiKey, target, payload) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CHAT_REQUEST_TIMEOUT_MS);
@@ -35,6 +78,7 @@ async function callGenerateContent(apiKey, target, payload) {
 
 // Import Models
 const User = require('./models/User');
+const { Admin: DefaultAdmin, createAdminModel } = require('./models/Admin');
 const Product = require('./models/Product');
 const Cart = require('./models/Cart');
 const Order = require('./models/Order');
@@ -43,12 +87,14 @@ const Returns = require('./models/Returns');
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
 // MongoDB Connection - Kết nối đến MongoDB Atlas (clothing_shop)
 const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_ADMIN_URI = process.env.MONGODB_ADMIN_URI;
+let Admin = DefaultAdmin;
 
 if (!MONGODB_URI) {
   console.error('❌ MONGODB_URI is not defined in .env file');
@@ -63,6 +109,18 @@ mongoose.connect(MONGODB_URI)
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err);
   });
+
+if (MONGODB_ADMIN_URI && MONGODB_ADMIN_URI !== MONGODB_URI) {
+  const adminConn = mongoose.createConnection(MONGODB_ADMIN_URI);
+  adminConn.on('connected', () => {
+    console.log('✅ Connected to Admin MongoDB successfully!');
+    console.log('📊 Database: admin');
+  });
+  adminConn.on('error', (err) => {
+    console.error('❌ Admin MongoDB connection error:', err);
+  });
+  Admin = createAdminModel(adminConn);
+}
 
 // Test route
 app.get('/', (req, res) => {
@@ -160,15 +218,39 @@ app.post('/api/chat/assistant', async (req, res) => {
         });
       }
 
-      return res.status(500).json({
+      const mappedRetryError = mapAssistantError(
+        retryAttempt.errorMessage || primaryAttempt.errorMessage || 'Assistant is temporarily unavailable.'
+      );
+      if (mappedRetryError.status === 429) {
+        return res.json({
+          success: true,
+          data: {
+            reply: buildLocalAssistantFallback(message, userName),
+            model: 'local-fallback'
+          }
+        });
+      }
+      return res.status(mappedRetryError.status).json({
         success: false,
-        message: retryAttempt.errorMessage || primaryAttempt.errorMessage || 'Assistant is temporarily unavailable.'
+        message: mappedRetryError.message
       });
     }
 
-    return res.status(500).json({
+    const mappedPrimaryError = mapAssistantError(
+      primaryAttempt.errorMessage || 'Assistant is temporarily unavailable.'
+    );
+    if (mappedPrimaryError.status === 429) {
+      return res.json({
+        success: true,
+        data: {
+          reply: buildLocalAssistantFallback(message, userName),
+          model: 'local-fallback'
+        }
+      });
+    }
+    return res.status(mappedPrimaryError.status).json({
       success: false,
-      message: primaryAttempt.errorMessage || 'Assistant is temporarily unavailable.'
+      message: mappedPrimaryError.message
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || 'Unexpected server error.' });
@@ -224,6 +306,44 @@ app.post('/api/users/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
     res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Login admin (uses Admin collection)
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    const admin = await Admin.findOne({
+      email: String(email).toLowerCase().trim(),
+      password,
+      isActive: { $ne: false }
+    });
+
+    if (!admin) {
+      return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
+    }
+
+    admin.lastLoginAt = new Date();
+    await admin.save();
+
+    res.json({
+      success: true,
+      data: {
+        _id: admin._id,
+        email: admin.email,
+        name: admin.name || 'Administrator',
+        role: 'admin',
+        accountType: 'admin',
+        permissions: admin.permissions || [],
+        lastLoginAt: admin.lastLoginAt
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -573,6 +693,15 @@ app.delete('/api/wishlist/:userId/:productId', async (req, res) => {
 });
 
 // ==================== RETURNS ROUTES ====================
+app.get('/api/returns', async (req, res) => {
+  try {
+    const items = await Returns.find().sort({ createdAt: -1 });
+    res.json({ success: true, count: items.length, data: items });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.get('/api/returns/user/:userId', async (req, res) => {
   try {
     const items = await Returns.find({ userId: req.params.userId }).sort({ createdAt: -1 });
@@ -609,13 +738,43 @@ app.post('/api/returns', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`API endpoints:`);
-  console.log(`   - GET  http://localhost:${PORT}/api/users`);
-  console.log(`   - GET  http://localhost:${PORT}/api/products`);
-  console.log(`   - GET  http://localhost:${PORT}/api/orders`);
-  console.log(`   - GET  http://localhost:${PORT}/api/wishlist/:userId`);
-  console.log(`   - GET  http://localhost:${PORT}/api/returns/user/:userId`);
+app.put('/api/returns/:id/decision', async (req, res) => {
+  try {
+    const { approved, adminNote } = req.body;
+    if (typeof approved !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'approved must be a boolean' });
+    }
+
+    const doc = await Returns.findById(req.params.id);
+    if (!doc) {
+      return res.status(404).json({ success: false, message: 'Return request not found' });
+    }
+
+    doc.status = approved ? 'approved' : 'rejected';
+    doc.adminNote = adminNote || '';
+    doc.reviewedAt = new Date();
+    await doc.save();
+
+    await Order.findByIdAndUpdate(doc.orderId, { status: approved ? 'returned' : 'completed' });
+
+    res.json({ success: true, data: doc });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
+
+const PORT = process.env.PORT || 3000;
+
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`API endpoints:`);
+    console.log(`   - GET  http://localhost:${PORT}/api/users`);
+    console.log(`   - GET  http://localhost:${PORT}/api/products`);
+    console.log(`   - GET  http://localhost:${PORT}/api/orders`);
+    console.log(`   - GET  http://localhost:${PORT}/api/wishlist/:userId`);
+    console.log(`   - GET  http://localhost:${PORT}/api/returns/user/:userId`);
+  });
+}
+
+module.exports = app;

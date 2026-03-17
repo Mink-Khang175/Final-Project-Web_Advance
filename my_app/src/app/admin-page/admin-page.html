@@ -16,6 +16,9 @@
       <button [class.active]="activeTab === 'orders'" (click)="setTab('orders')">
         <span class="nav-icon">&#9632;</span> Orders
       </button>
+      <button [class.active]="activeTab === 'returns'" (click)="setTab('returns')">
+        <span class="nav-icon">&#9632;</span> Returns
+      </button>
       <button [class.active]="activeTab === 'users'" (click)="setTab('users')">
         <span class="nav-icon">&#9632;</span> Users
       </button>
@@ -241,6 +244,63 @@
             </tr>
             <tr *ngIf="orders.length === 0">
               <td colspan="5" class="empty-row">No orders yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== RETURNS TAB ===== -->
+    <div *ngIf="activeTab === 'returns'">
+      <div class="page-header">
+        <div>
+          <h1>Return Requests</h1>
+          <p>{{ returns.length }} total requests</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-secondary" (click)="loadReturns()">Refresh</button>
+        </div>
+      </div>
+
+      <div class="loader-wrap" *ngIf="returnsLoading && returns.length === 0"><div class="loader"></div></div>
+
+      <div class="table-wrap" *ngIf="!returnsLoading || returns.length > 0">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>User</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Requested</th>
+              <th>Reviewed</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ret of returns">
+              <td>#{{ ret.orderNumber }}</td>
+              <td class="mono">{{ ret.userId | slice:0:8 }}...</td>
+              <td>{{ ret.reason || '—' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(ret.status)">{{ ret.status }}</span>
+              </td>
+              <td>{{ ret.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ ret.reviewedAt ? (ret.reviewedAt | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+              <td>
+                <div class="row-actions" *ngIf="canDecideReturn(ret)">
+                  <button class="btn-edit" (click)="approveReturn(ret)" [disabled]="decidingReturnId === ret._id">
+                    {{ decidingReturnId === ret._id ? 'Saving...' : 'Approve' }}
+                  </button>
+                  <button class="btn-delete" (click)="rejectReturn(ret)" [disabled]="decidingReturnId === ret._id">
+                    {{ decidingReturnId === ret._id ? 'Saving...' : 'Reject' }}
+                  </button>
+                </div>
+                <span *ngIf="!canDecideReturn(ret)">Done</span>
+              </td>
+            </tr>
+            <tr *ngIf="returns.length === 0">
+              <td colspan="7" class="empty-row">No return requests yet.</td>
             </tr>
           </tbody>
         </table>

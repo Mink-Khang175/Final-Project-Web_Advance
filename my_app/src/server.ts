@@ -12,6 +12,8 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
+const apiBaseUrl = process.env['API_BASE_URL'];
+
 /**
  * Example Express Rest API endpoints can be defined here.
  * Uncomment and define endpoints as necessary.
@@ -23,6 +25,35 @@ const angularApp = new AngularNodeAppEngine();
  * });
  * ```
  */
+
+/**
+ * Handle API requests during SSR/prerender.
+ * - If API_BASE_URL is set, proxy GET requests to that backend.
+ * - Otherwise return a safe empty payload to prevent build-time failures.
+ */
+app.get('/api/*', async (req, res) => {
+  if (!apiBaseUrl) {
+    res.status(200).json({ success: true, data: [], count: 0, message: 'API unavailable during SSR build.' });
+    return;
+  }
+
+  try {
+    const base = apiBaseUrl.replace(/\/+$/, '');
+    const path = req.originalUrl.replace(/^\/api/, '');
+    const targetUrl = `${base}${path}`;
+    const response = await (globalThis as any).fetch(targetUrl, { method: 'GET' });
+    const contentType = response.headers.get('content-type');
+
+    if (contentType) {
+      res.setHeader('content-type', contentType);
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    res.status(response.status).send(buffer);
+  } catch (error) {
+    res.status(502).json({ success: false, data: [], message: 'Failed to reach API during SSR build.' });
+  }
+});
 
 /**
  * Serve static files from /browser

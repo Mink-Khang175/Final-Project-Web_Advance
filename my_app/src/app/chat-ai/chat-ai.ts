@@ -12,8 +12,6 @@ import { ApiService, ChatMessage } from '../api.service';
 })
 export class ChatAI {
   @Input() userName = 'Customer';
-  private readonly preferredModel = 'gemini-3.1-flash-lite-preview';
-  private readonly preferredApiVersion = 'v1beta';
 
   input = '';
   sending = false;
@@ -43,10 +41,7 @@ export class ChatAI {
     this.sending = true;
 
     const history = this.messages.slice(0, -1);
-    this.api.askAssistant(text, history, this.userName, {
-      model: this.preferredModel,
-      apiVersion: this.preferredApiVersion
-    }).subscribe({
+    this.api.askAssistant(text, history, this.userName).subscribe({
       next: (reply) => {
         this.messages.push({ role: 'assistant', text: reply });
         this.sending = false;

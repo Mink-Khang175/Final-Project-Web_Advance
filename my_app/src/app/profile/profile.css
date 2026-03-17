@@ -244,6 +244,23 @@
   padding: 40px 32px;
 }
 
+.order-notice {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #b6e6c6;
+  background: #eefaf2;
+  color: #1e6b3a;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.order-notice.error {
+  border-color: #f0c8c8;
+  background: #fff3f3;
+  color: #9c2d2d;
+}
+
 /* ===== FADE-IN ANIMATION ===== */
 .fade-in {
   animation: fadeUp 0.5s ease both;

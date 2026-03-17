@@ -76,6 +76,9 @@
 
             <!-- Orders -->
             <div *ngSwitchCase="'orders'" class="orders-section fade-in">
+              <div *ngIf="orderNotice" class="order-notice" [class.error]="orderNotice.type === 'error'">
+                {{ orderNotice.text }}
+              </div>
               <div class="empty-state" *ngIf="!loadingOrders && orders.length === 0">
                 <div class="empty-icon-wrap">
                   <i class="fas fa-shopping-bag"></i>
@@ -100,9 +103,31 @@
                   <div style="text-align:right; font-weight:600; margin-top:8px;">
                     Total: {{ order.totalAmount | currency:'USD' }}
                   </div>
-                  <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                  <div *ngIf="canRequestReturn(order) && isReturnPanelOpen(order._id)" style="margin-top:10px;">
+                    <label style="display:block; font-size:12px; color:#666; margin-bottom:6px;">Return reason</label>
+                    <textarea
+                      [(ngModel)]="returnReasonByOrderId[order._id || '']"
+                      [name]="'returnReason_' + (order._id || '')"
+                      rows="2"
+                      placeholder="Please tell us why you want to return this order..."
+                      style="width:100%; border:1px solid #ddd; border-radius:6px; padding:8px; font-size:13px; resize:vertical;"></textarea>
+                  </div>
+                  <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
                     <button
-                      *ngIf="canRequestReturn(order)"
+                      *ngIf="canRequestReturn(order) && !isReturnPanelOpen(order._id)"
+                      (click)="toggleReturnPanel(order._id)"
+                      style="border:1px solid #ddd; background:#fff; color:#222; font-size:12px; letter-spacing:.06em; text-transform:uppercase; padding:8px 12px; border-radius:6px; cursor:pointer;">
+                      Start Return Request
+                    </button>
+                    <button
+                      *ngIf="canRequestReturn(order) && isReturnPanelOpen(order._id)"
+                      (click)="toggleReturnPanel(order._id)"
+                      [disabled]="isSubmittingReturn(order._id)"
+                      style="border:1px solid #ddd; background:#fff; color:#666; font-size:12px; letter-spacing:.06em; text-transform:uppercase; padding:8px 12px; border-radius:6px; cursor:pointer;">
+                      Cancel
+                    </button>
+                    <button
+                      *ngIf="canRequestReturn(order) && isReturnPanelOpen(order._id)"
                       (click)="requestReturn(order)"
                       [disabled]="isSubmittingReturn(order._id)"
                       style="border:1px solid #ddd; background:#fff; color:#222; font-size:12px; letter-spacing:.06em; text-transform:uppercase; padding:8px 12px; border-radius:6px; cursor:pointer;">
@@ -122,8 +147,8 @@
                 <div class="empty-icon-wrap">
                   <i class="fas fa-undo"></i>
                 </div>
-                <h3>No Returns Requested</h3>
-                <p>All your return requests will appear here.</p>
+                <h3>No Approved Returns Yet</h3>
+                <p>Approved return requests from admin will appear here.</p>
               </div>
               <div *ngIf="!loadingReturns && returnRequests.length > 0" class="orders-list">
                 <div class="order-item" *ngFor="let ret of returnRequests" style="border:1px solid #e0e0e0; border-radius:8px; padding:16px; margin-bottom:12px;">

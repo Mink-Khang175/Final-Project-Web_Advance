@@ -1,7 +1,8 @@
-﻿import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef, NgZone, DestroyRef, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService, CartItem } from '../api.service';
 
 @Component({
@@ -12,6 +13,7 @@ import { ApiService, CartItem } from '../api.service';
   styleUrl: './header.css',
 })
 export class Header implements OnInit, OnDestroy {
+  private destroyRef = inject(DestroyRef);
   isLoggedIn = false;
   searchActive = false;
   searchQuery = '';
@@ -46,7 +48,7 @@ export class Header implements OnInit, OnDestroy {
     private zone: NgZone,
     private api: ApiService
   ) {
-    this.router.events.subscribe((event) => {
+    this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       if (event instanceof NavigationEnd) {
         // Check if we're on home page (ignore query params and fragments)
         const urlPath = event.url.split('?')[0].split('#')[0];

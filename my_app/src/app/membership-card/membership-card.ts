@@ -50,27 +50,60 @@ export class MembershipCard {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
+    this.compressImage(file).then((base64) => {
       this.avatarDataUrl = base64;
+
+      // Always emit so parent can persist locally immediately.
+      this.avatarChanged.emit(base64);
 
       // Save directly into Users collection via existing PUT endpoint
       if (this.userId) {
         this.isUploading = true;
-        this.api.updateUser(this.userId, { image: base64 }).subscribe({
+        this.api.updateUser(this.userId, { image: base64, avatar: base64 }).subscribe({
           next: (user) => {
             this.isUploading = false;
-            this.avatarChanged.emit(user.image || base64);
+            this.avatarChanged.emit(user.image || user.avatar || base64);
           },
           error: () => {
             this.isUploading = false;
-            // Still emit local base64 so UI updates even if server fails
-            this.avatarChanged.emit(base64);
+            // Parent already received base64 and persisted local fallback
           }
         });
       }
-    };
-    reader.readAsDataURL(file);
+    }).catch(() => {
+      // Ignore invalid image files
+    });
+  }
+
+  private compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxSize = 320;
+          const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+          const width = Math.round(img.width * ratio);
+          const height = Math.round(img.height * ratio);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Canvas context unavailable'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          // JPEG keeps payload small enough for API/localStorage persistence.
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
+        };
+        img.onerror = () => reject(new Error('Invalid image'));
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => reject(new Error('Read error'));
+      reader.readAsDataURL(file);
+    });
   }
 }

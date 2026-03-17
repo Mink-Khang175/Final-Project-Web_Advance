@@ -19,20 +19,19 @@ export class PaymentResultComponent implements OnInit {
     constructor(private route: ActivatedRoute, private router: Router) { }
 
     ngOnInit(): void {
-        this.route.queryParams.subscribe(params => {
-            this.message = params['message'];
-            this.orderId = params['orderId'];
-            this.amount = params['amount'];
-            this.method = params['method'];
+        const params = this.route.snapshot.queryParams;
+        this.message = params['message'];
+        this.orderId = params['orderId'];
+        this.amount = params['amount'];
+        this.method = params['method'];
 
-            const status = (params['status'] || '').toLowerCase();
-            const resultCode = params['resultCode'];
-            this.isSuccess = status === 'success' || resultCode === '0';
+        const status = (params['status'] || '').toLowerCase();
+        const resultCode = params['resultCode'];
+        this.isSuccess = status === 'success' || resultCode === '0';
 
-            if (!this.message) {
-                this.message = this.isSuccess ? 'Purchase completed successfully.' : 'Payment failed. Please try again.';
-            }
-        });
+        if (!this.message) {
+            this.message = this.isSuccess ? 'Purchase completed successfully.' : 'Payment failed. Please try again.';
+        }
     }
 
     goBackToHome(): void {

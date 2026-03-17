@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID, DestroyRef, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Header } from '../header/header';
 import { Footer } from '../footer/footer';
 import { ProductCard, Product as CardProduct } from '../product-card/product-card';
@@ -30,6 +31,7 @@ interface ApiProduct {
   styleUrl: './product-detail.css',
 })
 export class ProductDetail implements OnInit {
+  private destroyRef = inject(DestroyRef);
   product: ApiProduct | null = null;
   mainImage = '';
   gallerySources: string[] = [];
@@ -53,7 +55,7 @@ export class ProductDetail implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const id = params['id'];
       if (!id) {
         this.errorMessage = 'No product ID provided.';
@@ -72,9 +74,11 @@ export class ProductDetail implements OnInit {
           this.cdr.detectChanges();
 
           if (p.category) {
-            this.api.getProductsByCategory(p.category).subscribe({
-              next: (list: ApiProduct[]) => {
-                this.similarProducts = list.filter(x => x._id !== p._id).slice(0, 4);
+            this.api.getProducts().subscribe({
+              next: (list: any[]) => {
+                this.similarProducts = (list || [])
+                  .filter((x) => x.category === p.category && x._id !== p._id)
+                  .slice(0, 4);
                 this.cdr.detectChanges();
               },
               error: () => {}
