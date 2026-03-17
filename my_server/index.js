@@ -10,6 +10,13 @@ const CHAT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const GEMINI_API_VERSION = process.env.GEMINI_API_VERSION || 'v1beta';
 const CHAT_REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 20000);
 
+function parseAllowedOrigins(value) {
+  return String(value || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 function mapAssistantError(errorMessage) {
   const raw = String(errorMessage || 'Assistant is temporarily unavailable.');
   const normalized = raw.toLowerCase();
@@ -86,7 +93,15 @@ const Wishlist = require('./models/Wishlist');
 const Returns = require('./models/Returns');
 
 // Middleware
-app.use(cors());
+const allowedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS blocked for this origin.'));
+  }
+}));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
@@ -129,6 +144,15 @@ app.get('/', (req, res) => {
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
 });
 
 // ==================== AI CHAT ROUTES ====================
