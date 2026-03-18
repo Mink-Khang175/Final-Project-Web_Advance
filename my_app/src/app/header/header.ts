@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef, NgZone, DestroyRef, inject } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef, NgZone, DestroyRef, ElementRef, ViewChild, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
@@ -14,16 +14,22 @@ import { ApiService, CartItem } from '../api.service';
 })
 export class Header implements OnInit, OnDestroy {
   private destroyRef = inject(DestroyRef);
+  @ViewChild('searchContainer') searchContainerRef?: ElementRef<HTMLElement>;
   isLoggedIn = false;
+  userAvatar = '';
   searchActive = false;
   searchQuery = '';
   isScrolled = false;
   isHomePage = false;
   activeSection = 'home';
 
+  readonly defaultAvatarSvg =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 96'%3E%3Crect width='80' height='96' fill='%23e8e8e8'/%3E%3Ccircle cx='40' cy='30' r='18' fill='%23bbb'/%3E%3Cellipse cx='40' cy='78' rx='30' ry='24' fill='%23bbb'/%3E%3C/svg%3E";
+
   // Search suggestions
   searchSuggestions: any[] = [];
   showSuggestions = false;
+  searchSuggestionsStyle: Record<string, string> = {};
   private allProducts: any[] = [];
   private productsLoaded = false;
 
@@ -38,6 +44,8 @@ export class Header implements OnInit, OnDestroy {
   private cartEventListener: (() => void) | null = null;
   private cartAddedEventListener: (() => void) | null = null;
   private cartPulseTimer: any = null;
+  private storageListener: ((event: StorageEvent) => void) | null = null;
+  private userProfileUpdatedListener: (() => void) | null = null;
 
   private searchDebounce: any = null;
   private sectionObserver: IntersectionObserver | null = null;
@@ -53,6 +61,10 @@ export class Header implements OnInit, OnDestroy {
   ) {
     this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       if (event instanceof NavigationEnd) {
+        if (isPlatformBrowser(this.platformId)) {
+          this.checkLoginStatus();
+        }
+
         // Check if we're on home page (ignore query params and fragments)
         const urlPath = event.url.split('?')[0].split('#')[0];
         const wasHomePage = this.isHomePage;
@@ -86,6 +98,16 @@ export class Header implements OnInit, OnDestroy {
   onWindowScroll(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.isScrolled = window.scrollY > 50;
+      if (this.showSuggestions) {
+        this.updateSearchSuggestionsPosition();
+      }
+    }
+  }
+
+  @HostListener('window:resize', [])
+  onWindowResize(): void {
+    if (this.showSuggestions) {
+      this.updateSearchSuggestionsPosition();
     }
   }
 
@@ -102,6 +124,14 @@ export class Header implements OnInit, OnDestroy {
         this.triggerCartPulse();
       };
       window.addEventListener('cart-item-added', this.cartAddedEventListener);
+      this.storageListener = (event: StorageEvent) => {
+        if (!event.key || event.key === 'loggedInUser') {
+          this.checkLoginStatus();
+        }
+      };
+      window.addEventListener('storage', this.storageListener);
+      this.userProfileUpdatedListener = () => this.checkLoginStatus();
+      window.addEventListener('user-profile-updated', this.userProfileUpdatedListener);
       // Check if we're on home page (ignore query params and fragments)
       const urlPath = this.router.url.split('?')[0].split('#')[0];
       this.isHomePage = urlPath === '/home' || urlPath === '/';
@@ -120,6 +150,8 @@ export class Header implements OnInit, OnDestroy {
     if (this.cartPulseTimer) clearTimeout(this.cartPulseTimer);
     if (this.cartEventListener) window.removeEventListener('cart-updated', this.cartEventListener);
     if (this.cartAddedEventListener) window.removeEventListener('cart-item-added', this.cartAddedEventListener);
+    if (this.storageListener) window.removeEventListener('storage', this.storageListener);
+    if (this.userProfileUpdatedListener) window.removeEventListener('user-profile-updated', this.userProfileUpdatedListener);
   }
 
   private triggerCartPulse(): void {
@@ -307,11 +339,27 @@ export class Header implements OnInit, OnDestroy {
   }
 
   checkLoginStatus(): void {
-    const user = localStorage.getItem('loggedInUser');
-    this.isLoggedIn = !!user;
-    if (user) {
-      this.userId = JSON.parse(user)._id || '';
+    const rawUser = localStorage.getItem('loggedInUser');
+    this.isLoggedIn = !!rawUser;
+
+    if (!rawUser) {
+      this.userId = '';
+      this.userAvatar = '';
+      return;
     }
+
+    try {
+      const parsedUser = JSON.parse(rawUser);
+      this.userId = parsedUser?._id || '';
+      this.userAvatar = parsedUser?.image || parsedUser?.avatar || this.defaultAvatarSvg;
+    } catch {
+      this.userId = '';
+      this.userAvatar = this.defaultAvatarSvg;
+    }
+  }
+
+  onUserAvatarError(): void {
+    this.userAvatar = this.defaultAvatarSvg;
   }
 
   loadCart(): void {
@@ -372,6 +420,7 @@ export class Header implements OnInit, OnDestroy {
     if (!this.searchActive) {
       this.showSuggestions = false;
       this.searchSuggestions = [];
+      this.searchSuggestionsStyle = {};
     } else {
       setTimeout(() => {
         const input = document.querySelector('.search-container .search-input') as HTMLInputElement;
@@ -384,6 +433,7 @@ export class Header implements OnInit, OnDestroy {
     // Delay so mousedown on suggestion fires before we hide
     setTimeout(() => {
       this.showSuggestions = false;
+      this.searchSuggestionsStyle = {};
       if (!this.searchQuery.trim()) {
         this.searchActive = false;
         this.searchSuggestions = [];
@@ -398,11 +448,21 @@ export class Header implements OnInit, OnDestroy {
     if (!q) {
       this.searchSuggestions = [];
       this.showSuggestions = false;
+      this.searchSuggestionsStyle = {};
     } else {
-      this.searchSuggestions = this.allProducts
+      const matchedSuggestions = this.allProducts
         .filter(p => p.name?.toLowerCase().includes(q))
         .slice(0, 6);
-      this.showSuggestions = this.searchSuggestions.length > 0;
+
+      this.searchSuggestions = matchedSuggestions;
+      if (matchedSuggestions.length > 0) {
+        // Set position before rendering to avoid a frame at fallback location.
+        this.updateSearchSuggestionsPosition();
+      }
+      this.showSuggestions = matchedSuggestions.length > 0;
+      if (this.showSuggestions) {
+        setTimeout(() => this.updateSearchSuggestionsPosition(), 0);
+      }
     }
     this.searchDebounce = setTimeout(() => {
       const urlPath = this.router.url.split('?')[0];
@@ -420,15 +480,40 @@ export class Header implements OnInit, OnDestroy {
     const q = this.searchQuery.trim();
     if (!q) return;
     this.showSuggestions = false;
+    this.searchSuggestionsStyle = {};
     this.searchActive = false;
     this.router.navigate(['/product-list'], { queryParams: { search: q } });
   }
 
   selectSuggestion(product: any): void {
     this.showSuggestions = false;
+    this.searchSuggestionsStyle = {};
     this.searchActive = false;
     this.searchQuery = '';
     this.router.navigate(['/product-detail'], { queryParams: { id: product._id } });
+  }
+
+  private updateSearchSuggestionsPosition(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const searchContainer = this.searchContainerRef?.nativeElement;
+    if (!searchContainer) return;
+
+    const rect = searchContainer.getBoundingClientRect();
+    const viewportPadding = 8;
+    const preferredWidth = 320;
+    const maxWidth = Math.max(220, window.innerWidth - viewportPadding * 2);
+    const width = Math.min(preferredWidth, maxWidth);
+    const left = Math.min(
+      Math.max(viewportPadding, rect.right - width),
+      window.innerWidth - width - viewportPadding
+    );
+
+    this.searchSuggestionsStyle = {
+      top: `${Math.round(rect.bottom + 8)}px`,
+      left: `${Math.round(left)}px`,
+      width: `${Math.round(width)}px`
+    };
   }
 
   loadAllProducts(): void {

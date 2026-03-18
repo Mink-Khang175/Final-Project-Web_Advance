@@ -186,6 +186,8 @@ header.glass-header {
    RIGHT ICONS
    ========================================== */
 .right-icons {
+  --header-icon-size: 34px;
+  --header-icon-glyph-size: 16px;
   display: flex;
   gap: 20px;
   align-items: center;
@@ -204,8 +206,8 @@ header.glass-header {
 }
 
 #userIconLink {
-  width: 34px;
-  height: 34px;
+  width: var(--header-icon-size);
+  height: var(--header-icon-size);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -213,6 +215,20 @@ header.glass-header {
   overflow: hidden;
   position: relative;
   padding: 0;
+  line-height: 1;
+}
+
+.user-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+header.glass-header.on-light .user-avatar {
+  border-color: rgba(26, 26, 26, 0.35);
 }
 
 /* ==========================================
@@ -222,8 +238,8 @@ header.glass-header {
   position: relative;
   display: flex;
   align-items: center;
-  height: 36px;
-  width: 36px;
+  height: var(--header-icon-size);
+  width: var(--header-icon-size);
   transition: width 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   overflow: visible;
 }
@@ -236,7 +252,7 @@ header.glass-header {
   position: absolute;
   right: 0;
   width: 0;
-  height: 36px;
+  height: var(--header-icon-size);
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: rgba(0, 0, 0, 0.2);
@@ -263,18 +279,19 @@ header.glass-header {
 .search-container .search-icon {
   position: absolute;
   right: 0;
-  width: 36px;
-  height: 36px;
+  width: var(--header-icon-size);
+  height: var(--header-icon-size);
   border: none;
   background: transparent;
   color: #fff;
-  font-size: 16px;
+  font-size: var(--header-icon-glyph-size);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2;
   transition: opacity 0.3s ease;
+  line-height: 1;
 }
 
 .search-container .search-icon:hover {
@@ -289,10 +306,12 @@ header.glass-header {
    SEARCH SUGGESTIONS DROPDOWN
    ========================================== */
 .search-suggestions {
-  position: absolute;
+  position: fixed;
   top: 68px;
   right: 48px;
+  left: auto;
   width: 320px;
+  max-width: calc(100vw - 16px);
   background: #fff;
   border: 1px solid #e0e0e0;
   border-top: none;
@@ -692,11 +711,15 @@ header.glass-header.on-light .dropdown li a {
 .cart-trigger {
   position: relative;
   color: #fff;
-  font-size: 16px;
+  font-size: var(--header-icon-glyph-size);
   text-decoration: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: var(--header-icon-size);
+  height: var(--header-icon-size);
+  line-height: 1;
   transition: opacity 0.35s ease;
 }
 
@@ -993,6 +1016,11 @@ header.glass-header.on-light .cart-badge {
 }
 
 @media (max-width: 640px) {
+  .right-icons {
+    --header-icon-size: 32px;
+    --header-icon-glyph-size: 15px;
+  }
+
   .navbar-blend {
     padding: 16px 18px;
   }
@@ -1019,6 +1047,11 @@ header.glass-header.on-light .cart-badge {
 }
 
 @media (max-width: 420px) {
+  .right-icons {
+    --header-icon-size: 30px;
+    --header-icon-glyph-size: 14px;
+  }
+
   .logo a {
     font-size: 15px;
     letter-spacing: 0.12em;

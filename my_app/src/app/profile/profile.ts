@@ -158,6 +158,7 @@ export class Profile implements OnInit, OnDestroy {
               avatar: user.avatar || userData.avatar || user.image || userData.image || ''
             };
             localStorage.setItem('loggedInUser', JSON.stringify(merged));
+            window.dispatchEvent(new Event('user-profile-updated'));
           },
           error: () => {} // Use cached data
         });
@@ -204,6 +205,7 @@ export class Profile implements OnInit, OnDestroy {
             const existingRaw = localStorage.getItem('loggedInUser');
             const existing = existingRaw ? JSON.parse(existingRaw) : {};
             localStorage.setItem('loggedInUser', JSON.stringify({ ...existing, ...updatedUser }));
+            window.dispatchEvent(new Event('user-profile-updated'));
             this.isEditMode = false;
             this.tempUserInfo = null;
             alert('Your information has been updated successfully!');
@@ -226,6 +228,7 @@ export class Profile implements OnInit, OnDestroy {
               dateOfBirth: this.userInfo.dateOfBirth,
               gender: this.userInfo.gender
             }));
+            window.dispatchEvent(new Event('user-profile-updated'));
             this.isEditMode = false;
             this.tempUserInfo = null;
             alert('Saved locally (server unavailable).');
@@ -248,6 +251,7 @@ export class Profile implements OnInit, OnDestroy {
           dateOfBirth: this.userInfo.dateOfBirth,
           gender: this.userInfo.gender
         }));
+        window.dispatchEvent(new Event('user-profile-updated'));
         this.isEditMode = false;
         this.tempUserInfo = null;
       }
@@ -267,6 +271,7 @@ export class Profile implements OnInit, OnDestroy {
       userData.image = imageBase64;
       userData.avatar = imageBase64;
       localStorage.setItem('loggedInUser', JSON.stringify(userData));
+      window.dispatchEvent(new Event('user-profile-updated'));
     }
   }
 
@@ -350,6 +355,7 @@ export class Profile implements OnInit, OnDestroy {
       event.preventDefault();
     }
     localStorage.removeItem('loggedInUser');
+    window.dispatchEvent(new Event('user-profile-updated'));
     this.router.navigate(['/auth']);
   }
 

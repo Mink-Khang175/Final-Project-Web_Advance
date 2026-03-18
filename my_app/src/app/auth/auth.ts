@@ -134,12 +134,14 @@ export class Auth {
     this.api.loginAdmin(this.loginEmail, this.loginPassword).subscribe({
       next: (admin) => {
         localStorage.setItem('loggedInUser', JSON.stringify(admin));
+        window.dispatchEvent(new Event('user-profile-updated'));
         this.router.navigate(['/admin']);
       },
       error: () => {
         this.api.login(this.loginEmail, this.loginPassword).subscribe({
           next: (user) => {
             localStorage.setItem('loggedInUser', JSON.stringify(user));
+            window.dispatchEvent(new Event('user-profile-updated'));
             this.router.navigate(['/profile']);
           },
           error: (err) => {

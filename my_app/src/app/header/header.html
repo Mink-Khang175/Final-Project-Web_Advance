@@ -28,10 +28,16 @@
       <div class="right-icons">
         <a [routerLink]="isLoggedIn ? '/profile' : '/auth'" id="userIconLink"
           [title]="isLoggedIn ? 'View profile' : 'Sign in'">
-          <i class="fas fa-user"></i>
+          <img
+            *ngIf="isLoggedIn"
+            [src]="userAvatar || defaultAvatarSvg"
+            alt="User avatar"
+            class="user-avatar"
+            (error)="onUserAvatarError()">
+          <i *ngIf="!isLoggedIn" class="fas fa-user"></i>
         </a>
 
-        <div class="search-container" [class.active]="searchActive">
+        <div class="search-container" [class.active]="searchActive" #searchContainer>
           <input
             type="text"
             class="search-input"
@@ -103,7 +109,7 @@
   </div>
 
   <!-- Search Suggestions (outside blend context to avoid mix-blend-mode) -->
-  <div class="search-suggestions" *ngIf="showSuggestions">
+  <div class="search-suggestions" *ngIf="showSuggestions" [ngStyle]="searchSuggestionsStyle">
     <div class="suggestion-item" *ngFor="let p of searchSuggestions" (mousedown)="selectSuggestion(p)">
       <div class="suggestion-img-wrap">
         <img [src]="p.image || '/assets/images/placeholder.jpg'" [alt]="p.name" class="suggestion-img">
